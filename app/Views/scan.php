@@ -764,12 +764,19 @@
   window.addEventListener('pagehide', stopCamera);
   window.addEventListener('beforeunload', stopCamera);
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     renderHistory();
+    // Explicitly ask for camera permission to trigger prompt early (helps on self‑signed HTTPS)
+    try {
+        const perm = await navigator.mediaDevices.getUserMedia({ video: true });
+        perm.getTracks().forEach(t => t.stop());
+    } catch (e) {
+        console.warn('Camera permission request failed', e);
+    }
     startCamera('environment');
     document.getElementById('page-loader')?.classList.remove('active');
     document.querySelector('.app-shell')?.classList.remove('page-fade-out');
-  });
+});
 })();
 </script>
 <?= $this->endSection() ?>
