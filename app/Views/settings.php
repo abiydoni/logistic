@@ -5,6 +5,8 @@
 <?php
   $companyName = trim($app['company_name'] ?? session()->get('company_name') ?? \App\Models\AppSettingsModel::DEFAULT_COMPANY);
   $companyInitials = strtoupper(substr(preg_replace('/\s+/', '', $companyName), 0, 2) ?: 'AB');
+  $wa = $wa ?? [];
+  $waEnabled = in_array(strtolower((string) ($wa['wa_notify_enabled'] ?? 'true')), ['1', 'true', 'yes', 'on'], true);
 ?>
 
 <div class="app-page settings-page">
@@ -15,30 +17,38 @@
       <div class="settings-hero-body">
         <p class="settings-hero-kicker"><?= lang('App.company_profile') ?></p>
         <h1 class="settings-hero-name"><?= esc($companyName) ?></h1>
-        <p class="settings-hero-desc"><?= lang('App.company_profile_desc') ?></p>
+        <p class="settings-hero-desc"><?= lang('App.settings_page_desc') ?></p>
       </div>
     </div>
   </header>
 
-  <section class="profile-card">
-    <div class="profile-card-head">
-      <div class="profile-card-icon">
-        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-      </div>
-      <div>
-        <div class="profile-card-title"><?= lang('App.menu_setting') ?></div>
-        <div class="profile-card-desc"><?= lang('App.company_name') ?></div>
-      </div>
+  <?php if (empty($is_admin)): ?>
+    <div class="settings-notice profile-card">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <p><?= lang('App.settings_admin_only') ?></p>
     </div>
+  <?php endif; ?>
 
-    <?php if (empty($is_admin)): ?>
-      <div class="settings-notice">
-        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <p><?= lang('App.settings_admin_only') ?></p>
+  <?php if (empty($wa_ready)): ?>
+    <div class="settings-notice profile-card settings-notice-warn">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      <p><?= lang('App.wa_config_table_missing') ?></p>
+    </div>
+  <?php endif; ?>
+
+  <form id="settings-form" action="<?= base_url('settings/update') ?>" method="post">
+
+    <section class="profile-card">
+      <div class="profile-card-head">
+        <div class="profile-card-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <div>
+          <div class="profile-card-title"><?= lang('App.company_profile') ?></div>
+          <div class="profile-card-desc"><?= lang('App.company_name') ?></div>
+        </div>
       </div>
-    <?php endif; ?>
 
-    <form id="settings-form" action="<?= base_url('settings/update') ?>" method="post">
       <div class="profile-fields">
         <div class="profile-field">
           <label for="company_name"><?= lang('App.company_name') ?></label>
@@ -51,20 +61,99 @@
             placeholder="Contoh: PT Logistik Nusantara"
             autocomplete="organization"
           >
-          <?php if (! empty($is_admin)): ?>
-            <p class="profile-field-hint"><?= lang('App.company_profile_desc') ?></p>
-          <?php endif; ?>
+          <p class="profile-field-hint"><?= lang('App.company_profile_desc') ?></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="profile-card settings-wa-card">
+      <div class="profile-card-head">
+        <div class="profile-card-icon settings-wa-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        </div>
+        <div>
+          <div class="profile-card-title"><?= lang('App.wa_notify_section') ?></div>
+          <div class="profile-card-desc"><?= lang('App.wa_notify_section_desc') ?></div>
         </div>
       </div>
 
-      <?php if (! empty($is_admin)): ?>
-        <button type="submit" class="btn-primary profile-save-btn">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-          <?= lang('App.save') ?>
-        </button>
-      <?php endif; ?>
-    </form>
-  </section>
+      <div class="profile-fields">
+        <div class="profile-field settings-check-field">
+          <label class="settings-check-label">
+            <input
+              type="checkbox"
+              name="wa_notify_enabled"
+              value="1"
+              <?= $waEnabled ? 'checked' : '' ?>
+              <?= empty($is_admin) || empty($wa_ready) ? 'disabled' : '' ?>
+            >
+            <span><?= lang('App.wa_notify_enabled') ?></span>
+          </label>
+          <p class="profile-field-hint"><?= lang('App.wa_notify_enabled_hint') ?></p>
+        </div>
+
+        <div class="profile-field">
+          <label for="wa_notify_days"><?= lang('App.wa_notify_days') ?></label>
+          <input
+            type="number"
+            name="wa_notify_days"
+            id="wa_notify_days"
+            min="1"
+            max="365"
+            <?= ! empty($is_admin) && ! empty($wa_ready) ? 'required' : 'readonly' ?>
+            value="<?= esc((int) ($wa['wa_notify_days'] ?? 30)) ?>"
+          >
+          <p class="profile-field-hint"><?= lang('App.wa_notify_days_hint') ?></p>
+        </div>
+
+        <div class="profile-field">
+          <label for="wa_group_id"><?= lang('App.wa_group_id') ?></label>
+          <input
+            type="text"
+            name="wa_group_id"
+            id="wa_group_id"
+            <?= ! empty($is_admin) && ! empty($wa_ready) ? '' : 'readonly' ?>
+            value="<?= esc($wa['wa_group_id'] ?? '') ?>"
+            placeholder="120363398680818900@g.us"
+            autocomplete="off"
+          >
+          <p class="profile-field-hint"><?= lang('App.wa_group_id_hint') ?></p>
+        </div>
+
+        <div class="profile-field">
+          <label for="api_url_group"><?= lang('App.wa_api_url') ?></label>
+          <input
+            type="url"
+            name="api_url_group"
+            id="api_url_group"
+            <?= ! empty($is_admin) && ! empty($wa_ready) ? '' : 'readonly' ?>
+            value="<?= esc($wa['api_url_group'] ?? '') ?>"
+            placeholder="https://telebot.appsbee.my.id"
+          >
+          <p class="profile-field-hint"><?= lang('App.wa_api_url_hint') ?></p>
+        </div>
+
+        <div class="profile-field">
+          <label for="report_expired"><?= lang('App.wa_report_file') ?></label>
+          <input
+            type="text"
+            name="report_expired"
+            id="report_expired"
+            <?= ! empty($is_admin) && ! empty($wa_ready) ? '' : 'readonly' ?>
+            value="<?= esc($wa['report_expired'] ?? 'ambil_data_expired.php') ?>"
+          >
+          <p class="profile-field-hint"><?= lang('App.wa_report_file_hint') ?></p>
+        </div>
+      </div>
+    </section>
+
+    <?php if (! empty($is_admin) && ! empty($wa_ready)): ?>
+      <button type="submit" class="btn-primary profile-save-btn settings-save-all">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        <?= lang('App.save') ?>
+      </button>
+    <?php endif; ?>
+  </form>
 
   <a href="<?= base_url('profile') ?>" class="settings-link-card">
     <div class="settings-link-icon">
@@ -79,11 +168,14 @@
 
 </div>
 
-<?php if (! empty($is_admin)): ?>
+<?php if (! empty($is_admin) && ! empty($wa_ready)): ?>
 <script>
   document.getElementById('settings-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     var formData = new FormData(this);
+    if (!formData.has('wa_notify_enabled')) {
+      formData.append('wa_notify_enabled', '');
+    }
     try {
       var response = await fetch(this.action, { method: 'POST', body: formData });
       var result = await response.json();

@@ -2166,6 +2166,75 @@ html, body { font-size: 16px; }
   line-height: 1.45;
 }
 
+.settings-notice-warn {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.settings-notice-warn svg {
+  color: #d97706;
+}
+
+.settings-wa-card {
+  margin-top: 0;
+}
+
+.settings-wa-icon {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+.settings-check-field {
+  padding-top: 4px;
+}
+
+.settings-check-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.settings-check-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.settings-check-label input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.profile-field input[type="number"],
+.profile-field input[type="url"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-family: var(--font);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.profile-field input[type="number"]:focus,
+.profile-field input[type="url"]:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.settings-save-all {
+  width: 100%;
+  margin-top: 4px;
+}
+
 .settings-link-card {
   display: flex;
   align-items: center;
