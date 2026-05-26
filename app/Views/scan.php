@@ -5,12 +5,12 @@
 <style>
 /* Premium Adaptive Scanner Theme */
 .scan-page {
-  min-height: 100vh;
+  height: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   background: radial-gradient(circle at 50% 30%, #f1f5f9, #cbd5e1);
-  padding: 2rem 1rem;
+  padding: 2rem 1rem 1.5rem;
   color: #0f172a;
   font-family: 'Outfit', sans-serif;
 }
@@ -146,6 +146,12 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
 .scan-history-item:last-child { border-bottom: none !important; }
 .scan-history-item .name { font-size: 13px !important; font-weight: 600 !important; }
 .scan-history-item .meta { font-size: 10px !important; opacity: 0.7 !important; }
+
+/* Override: scan page — app-shell tidak perlu min-height 100vh */
+#scan-app ~ * .app-shell,
+.scan-page .app-shell { min-height: unset !important; height: auto !important; }
+/* Cara lebih andal: set langsung di body saat halaman scan */
+body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !important; }
 </style>
 
 <div class="scan-page" id="scan-app"
@@ -209,10 +215,10 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
     </div>
 
     <!-- History & Tip -->
-    <div style="padding: 12px 14px;">
-      <div class="scan-section-label" style="margin-bottom: 8px;"><?= lang('App.recent_scans') ?></div>
-      <ul class="scan-history-list" id="scan-history" style="max-height: 140px; margin-bottom: 0;">
-        <li class="scan-empty-history" id="history-empty" style="padding: 8px; font-size: 11px;"><?= lang('App.empty_data') ?></li>
+    <div style="padding: 10px 14px 12px;">
+      <div class="scan-section-label" style="margin-bottom: 6px;"><?= lang('App.recent_scans') ?></div>
+      <ul class="scan-history-list" id="scan-history" style="margin-bottom: 0;">
+        <li class="scan-empty-history" id="history-empty" style="padding: 6px 4px; font-size: 11px; color: var(--text-faint);"><?= lang('App.empty_data') ?></li>
       </ul>
     </div>
   </div>
@@ -380,6 +386,7 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
   let lastCodeAt = 0;
   let processing = false;
   let userInteracted = false;
+  let activeVideoTrack = null; // referensi track untuk flash
 
   const el = (id) => document.getElementById(id);
 
@@ -493,24 +500,29 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
 
   async function startCamera(facing) {
     facingMode = facing || facingMode;
+    activeVideoTrack = null;
+    isFlashOn = false;
+
+    // Sembunyikan tombol flash sampai kita tahu torch didukung
+    const flashBtn = el('btn-flash');
+    if (flashBtn) { flashBtn.hidden = true; flashBtn.style.display = 'none'; flashBtn.classList.remove('active'); }
+
     try {
       const readerEl = el('reader');
       if (!readerEl) return;
-      if (readerEl.querySelector('video') === null && readerEl.innerHTML && !readerEl.querySelector('button')) {
-        /* keep error UI */
-      } else if (!readerEl.querySelector('video')) {
-        readerEl.innerHTML = '';
-      }
 
-      el('btn-flash')?.classList.add('hidden');
-      isFlashOn = false;
-
-      if (!html5QrcodeScanner) {
-        html5QrcodeScanner = new Html5Qrcode('reader', { verbose: false });
-      } else if (isScanning) {
-        await stopCamera();
-        readerEl.innerHTML = '';
+      // Bersihkan state sebelumnya
+      if (html5QrcodeScanner && isScanning) {
+        try { await html5QrcodeScanner.stop(); } catch (e) {}
+        isScanning = false;
       }
+      if (html5QrcodeScanner) {
+        try { await html5QrcodeScanner.clear(); } catch (e) {}
+        html5QrcodeScanner = null;
+      }
+      readerEl.innerHTML = '';
+
+      html5QrcodeScanner = new Html5Qrcode('reader', { verbose: false });
 
       await html5QrcodeScanner.start(
         { facingMode },
@@ -524,29 +536,30 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
       setStatus('', LANG.scanning, LANG.instruction);
       el('scan-overlay')?.classList.remove('hidden');
 
+      // Periksa dukungan flash setelah kamera aktif
       setTimeout(() => {
         try {
           const video = document.querySelector('#reader video');
           const track = video?.srcObject?.getVideoTracks()[0];
-          const caps = track?.getCapabilities() || (typeof html5QrcodeScanner.getRunningTrackCapabilities === 'function' ? html5QrcodeScanner.getRunningTrackCapabilities() : {});
-          
-          if (caps?.torch || facingMode === 'environment') {
-            if (el('btn-flash')) {
-              el('btn-flash').hidden = false;
-              el('btn-flash').removeAttribute('hidden');
-              el('btn-flash').style.display = 'flex';
-            }
-          } else {
-            if (el('btn-flash')) {
-              el('btn-flash').hidden = true;
-              el('btn-flash').style.display = 'none';
+          if (track) {
+            activeVideoTrack = track;
+            const caps = track.getCapabilities ? track.getCapabilities() : {};
+            const torchSupported = !!caps.torch;
+            if (torchSupported && flashBtn) {
+              flashBtn.hidden = false;
+              flashBtn.removeAttribute('hidden');
+              flashBtn.style.display = 'flex';
             }
           }
-        } catch (e) {}
-      }, 600);
+        } catch (e) { console.warn('Flash capability check:', e); }
+      }, 800);
+
     } catch (err) {
       console.warn('Camera error', err);
+      isScanning = false;
+      html5QrcodeScanner = null;
       if (facingMode === 'environment') {
+        facingMode = 'user';
         await startCamera('user');
       } else {
         showCameraError(err);
@@ -556,31 +569,20 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
   window.__scanStartCam = () => startCamera('environment');
 
   async function toggleFlash() {
-    if (!html5QrcodeScanner || !isScanning) return;
+    if (!isScanning) return;
+    // Pastikan kita punya referensi track yang valid
+    if (!activeVideoTrack || activeVideoTrack.readyState !== 'live') {
+      const video = document.querySelector('#reader video');
+      activeVideoTrack = video?.srcObject?.getVideoTracks()[0] || null;
+    }
+    if (!activeVideoTrack) { console.warn('No video track for flash'); return; }
     try {
       isFlashOn = !isFlashOn;
-      
-      let success = false;
-      if (typeof html5QrcodeScanner.applyVideoConstraints === 'function') {
-        try {
-          await html5QrcodeScanner.applyVideoConstraints({ advanced: [{ torch: isFlashOn }] });
-          success = true;
-        } catch (e) { console.warn("Library torch failed", e); }
-      }
-      
-      if (!success) {
-        const video = document.querySelector('#reader video');
-        const track = video?.srcObject?.getVideoTracks()[0];
-        if (track) {
-          await track.applyConstraints({ advanced: [{ torch: isFlashOn }] });
-        }
-      }
-      
+      await activeVideoTrack.applyConstraints({ advanced: [{ torch: isFlashOn }] });
       el('btn-flash')?.classList.toggle('active', isFlashOn);
     } catch (e) {
-      console.warn("Flash toggle error:", e);
-      // Revert state if failed
-      isFlashOn = !isFlashOn;
+      console.warn('Flash toggle error:', e);
+      isFlashOn = !isFlashOn; // revert
     }
   }
 
@@ -945,19 +947,26 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
   window.addEventListener('pagehide', stopCamera);
   window.addEventListener('beforeunload', stopCamera);
 
-  document.addEventListener('DOMContentLoaded', async () => {
+  // Inisialisasi langsung (bukan via DOMContentLoaded) agar tidak menumpuk
+  // saat navigasi PJAX berulang ke halaman ini.
+  (async () => {
     renderHistory();
-    // Explicitly ask for camera permission to trigger prompt early (helps on self‑signed HTTPS)
+    // Minta izin kamera lebih awal agar prompt muncul sebelum library berjalan
     try {
-        const perm = await navigator.mediaDevices.getUserMedia({ video: true });
-        perm.getTracks().forEach(t => t.stop());
+      const perm = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      perm.getTracks().forEach(t => t.stop());
     } catch (e) {
-        console.warn('Camera permission request failed', e);
+      console.warn('Camera permission request failed', e);
     }
-    startCamera('environment');
-    document.getElementById('page-loader')?.classList.remove('active');
-    document.querySelector('.app-shell')?.classList.remove('page-fade-out');
-});
+    await startCamera('environment');
+  })();
+
+  // Restart kamera jika halaman kembali terlihat (misal: pindah tab lalu balik)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !isScanning && el('scan-app')) {
+      startCamera(facingMode);
+    }
+  });
 })();
 </script>
 <?= $this->endSection() ?>
