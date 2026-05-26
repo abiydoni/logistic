@@ -8,8 +8,11 @@ use App\Models\WarehouseModel;
 
 class Inventory extends BaseController
 {
+    /** @var \App\Models\WarehouseModel */
     protected $warehouseModel;
+    /** @var \App\Models\ItemModel */
     protected $itemModel;
+    /** @var \App\Models\ItemTransactionModel */
     protected $transactionModel;
 
     public function __construct()
@@ -58,6 +61,13 @@ class Inventory extends BaseController
             
             // Delete operation
             if ($this->request->getPost('_method') === 'DELETE') {
+                $item = $this->itemModel->find($id);
+                if ($item && !empty($item['photo'])) {
+                    $photoPath = FCPATH . 'uploads/items/' . $item['photo'];
+                    if (is_file($photoPath)) {
+                        unlink($photoPath);
+                    }
+                }
                 $this->itemModel->deleteWithAudit($id);
                 return $this->response->setJSON(['status' => 'success', 'message' => lang('App.update_stock_success')]);
             }
@@ -90,6 +100,45 @@ class Inventory extends BaseController
                 'expired_date' => $expiredDate,
                 'is_active'    => $isActive,
             ];
+
+            // Handle image upload
+            $photoFile = $this->request->getFile('photo');
+            if ($photoFile && $photoFile->isValid() && ! $photoFile->hasMoved()) {
+                $validationRule = [
+                    'photo' => [
+                        'label' => 'Photo',
+                        'rules' => 'uploaded[photo]|is_image[photo]|max_size[photo,2048]',
+                    ],
+                ];
+
+                if (! $this->validate($validationRule)) {
+                    return $this->response->setJSON([
+                        'status'  => 'error',
+                        'message' => 'Format file tidak valid atau ukuran file melebihi 2MB! Pastikan mengunggah file gambar (JPG/PNG/GIF).',
+                    ]);
+                }
+
+                // If editing and has an old photo, delete it first
+                if ($id) {
+                    $oldItem = $this->itemModel->find($id);
+                    if ($oldItem && !empty($oldItem['photo'])) {
+                        $oldPhotoPath = FCPATH . 'uploads/items/' . $oldItem['photo'];
+                        if (is_file($oldPhotoPath)) {
+                            unlink($oldPhotoPath);
+                        }
+                    }
+                }
+
+                // Create folder if not exists
+                $uploadPath = FCPATH . 'uploads/items';
+                if (! is_dir($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
+                }
+
+                $newPhotoName = $photoFile->getRandomName();
+                $photoFile->move($uploadPath, $newPhotoName);
+                $data['photo'] = $newPhotoName;
+            }
 
             if ($id) {
                 // Update
@@ -221,6 +270,8 @@ class Inventory extends BaseController
 
     /**
      * Get item details and complete transaction history for stock/bincard visualization.
+     *
+     * @param int|string $itemId
      */
     public function bincard($itemId)
     {

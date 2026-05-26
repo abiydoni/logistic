@@ -1,3 +1,18 @@
+<?php
+/**
+ * @var \CodeIgniter\View\View $this
+ * @var array $items
+ * @var array $warehouses
+ * @var string|null $selected_warehouse
+ * @var string|null $search_query
+ * @var int $current_page
+ * @var int $total_pages
+ * @var int $total_items
+ * @var int $per_page
+ * @var string|null $low_stock
+ * @var string|null $expired
+ */
+?>
 <?= $this->extend('layout/main') ?>
 <?= $this->section('content') ?>
 
@@ -13,7 +28,7 @@
 
 .table-header-grid {
   display: grid;
-  grid-template-columns: 20px 1fr 60px 48px 100px;
+  grid-template-columns: 24px 20px 1fr 60px 48px 100px;
   gap: 4px;
   padding: 6px 8px;
   background: var(--surface-2);
@@ -30,7 +45,7 @@
 
 .item-card-row {
   display: grid;
-  grid-template-columns: 20px 1fr 60px 48px 100px;
+  grid-template-columns: 24px 20px 1fr 60px 48px 100px;
   gap: 4px;
   padding: 8px;
   border-bottom: 1px solid var(--border);
@@ -308,11 +323,11 @@
 /* ── Mobile Layout Fixes ── */
 @media (max-width: 640px) {
   .table-header-grid {
-    grid-template-columns: 18px 1fr 50px 40px 96px;
+    grid-template-columns: 24px 18px 1fr 50px 40px 96px;
     padding: 6px 4px;
   }
   .item-card-row {
-    grid-template-columns: 18px 1fr 50px 40px 96px;
+    grid-template-columns: 24px 18px 1fr 50px 40px 96px;
     padding: 6px 4px;
     gap: 2px;
   }
@@ -384,7 +399,14 @@
 </style>
 
 <?php
-// Helper: build query string preserving current filters
+/**
+ * Helper: build query string preserving current filters
+ *
+ * @param int $page
+ * @param string|null $search
+ * @param string|null $warehouse
+ * @return string
+ */
 function pageUrl($page, $search, $warehouse) {
     $q = http_build_query(array_filter([
         'page'         => $page > 1 ? $page : null,
@@ -406,6 +428,10 @@ function pageUrl($page, $search, $warehouse) {
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
     <?= lang('App.new_item') ?>
   </button>
+  <!-- <button type="button" onclick="window.location.href='<?= base_url('scan') ?>'" class="btn-primary ml-2">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v4m6-2l-6 6-6-6"/></svg>
+    <?= lang('App.scan_item') ?>
+  </button> -->
 </div>
 
 <form class="filter-bar no-print" method="get" action="<?= base_url('inventory/items') ?>">
@@ -447,7 +473,7 @@ function pageUrl($page, $search, $warehouse) {
       </button>
     </div>
 
-    <form id="item-form" action="<?= base_url('inventory/items') ?>" method="post" style="display:flex;flex-direction:column;gap:10px">
+    <form id="item-form" action="<?= base_url('inventory/items') ?>" method="post" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:10px">
       <input type="hidden" name="id" id="item-id">
 
       <!-- Gudang + Kode -->
@@ -494,6 +520,27 @@ function pageUrl($page, $search, $warehouse) {
         <input type="date" name="expired_date" id="expired_date" style="font-size:11px;padding:8px;border-radius:8px">
       </div>
 
+      <!-- Foto Item (Premium Upload Component) -->
+      <div>
+        <label style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:4px">Foto Barang</label>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);padding:8px;border-radius:8px;border:1px solid var(--border)">
+          <div id="photo-preview-container" style="width:50px;height:50px;border-radius:8px;overflow:hidden;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;background:var(--surface);flex-shrink:0">
+            <svg id="photo-preview-placeholder" width="20" height="20" fill="none" stroke="var(--text-faint)" stroke-width="1.8" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <img id="photo-preview-img" style="display:none;width:100%;height:100%;object-fit:cover" alt="Preview">
+          </div>
+          <div style="flex:1">
+            <input type="file" name="photo" id="photo-input" accept="image/*" style="display:none">
+            <button type="button" onclick="document.getElementById('photo-input').click()" class="btn-primary" style="padding:6px 10px;font-size:10px;border-radius:6px;width:auto;background:var(--surface);color:var(--text-muted);border:1px solid var(--border);gap:4px">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+              Pilih Foto
+            </button>
+            <p style="font-size:8px;color:var(--text-faint);margin-top:4px">Maksimal 2MB (JPG, PNG, GIF)</p>
+          </div>
+        </div>
+      </div>
+
       <div>
         <label style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px"><?= lang('App.status') ?></label>
         <div class="grid grid-cols-2 gap-2">
@@ -530,6 +577,7 @@ function pageUrl($page, $search, $warehouse) {
 
     <!-- Header Row -->
     <div class="table-header-grid">
+      <div style="display:flex;align-items:center;justify-content:center"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)" style="cursor:pointer"></div>
       <span style="text-align:center">#</span>
       <span><?= lang('App.item_name') ?></span>
       <span style="text-align:center">Exp</span>
@@ -559,32 +607,48 @@ function pageUrl($page, $search, $warehouse) {
          class="item-card-row<?= $isActive ? '' : ' is-inactive' ?>"
          style="background:<?= $rowBg ?>;">
 
+      <!-- Checkbox -->
+      <div style="display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation()">
+        <input type="checkbox" class="item-checkbox" value="<?= $item['id'] ?>" data-name="<?= esc($item['name']) ?>" data-code="<?= esc($item['code']) ?>" onchange="updateBulkActionState()" style="cursor:pointer">
+      </div>
+
       <!-- # -->
       <div class="col-index">
         <?= $offset_idx + $idx ?>
       </div>
 
       <!-- Item Info -->
-      <div class="col-details">
-        <div class="item-title-row">
-          <span class="item-name-txt"><?= esc($item['name']) ?></span>
-          <div class="badges-row">
-            <?php if (! $isActive): ?>
-              <span class="badge badge-rose"><?= lang('App.status_inactive') ?></span>
-            <?php endif; ?>
-            <?php if ($isExpired): ?>
-              <span class="badge badge-rose">Exp</span>
-            <?php elseif ($isSoonExp): ?>
-              <span class="badge badge-amber">~Exp</span>
-            <?php endif; ?>
-
-
-
-          </div>
+      <div class="col-details" style="display:flex; flex-direction:row; align-items:center; gap:8px;">
+        <!-- Photo Thumbnail -->
+        <div style="flex-shrink:0; display:flex; align-items:center;">
+          <?php if (!empty($item['photo'])): ?>
+            <img src="<?= base_url('uploads/items/' . $item['photo']) ?>" alt="<?= esc($item['name']) ?>" style="width:36px; height:36px; border-radius:8px; object-fit:cover; border:1.5px solid var(--border); box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+          <?php else: ?>
+            <div style="width:36px; height:36px; border-radius:8px; background:linear-gradient(135deg, var(--surface-2), var(--surface-3, var(--border))); border:1.5px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-weight:bold; font-size:10px;">
+              <?= strtoupper(substr(esc($item['name']), 0, 2)) ?>
+            </div>
+          <?php endif; ?>
         </div>
-        <div class="item-sub-row">
-          <span class="item-code-badge"><?= esc($item['code']) ?></span>
-          <span class="item-warehouse-txt"><?= esc($item['warehouse_name']) ?></span>
+
+        <!-- Details Text -->
+        <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+          <div class="item-title-row">
+            <span class="item-name-txt"><?= esc($item['name']) ?></span>
+            <div class="badges-row">
+              <?php if (! $isActive): ?>
+                <span class="badge badge-rose"><?= lang('App.status_inactive') ?></span>
+              <?php endif; ?>
+              <?php if ($isExpired): ?>
+                <span class="badge badge-rose">Exp</span>
+              <?php elseif ($isSoonExp): ?>
+                <span class="badge badge-amber">~Exp</span>
+              <?php endif; ?>
+            </div>
+          </div>
+          <div class="item-sub-row">
+            <span class="item-code-badge"><?= esc($item['code']) ?></span>
+            <span class="item-warehouse-txt"><?= esc($item['warehouse_name']) ?></span>
+          </div>
         </div>
       </div>
 
@@ -681,6 +745,21 @@ function pageUrl($page, $search, $warehouse) {
 <?php endif; ?>
 
 </div><!-- .app-page.items-page -->
+
+<!-- Floating Bulk Actions -->
+<div id="bulk-action-bar" class="no-print" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);box-shadow:0 10px 25px -5px rgba(0,0,0,0.2), 0 8px 10px -6px rgba(0,0,0,0.1);padding:12px 20px;border-radius:12px;z-index:4000;border:1px solid var(--border);align-items:center;gap:16px;">
+  <span id="bulk-count" style="font-size:13px;font-weight:700;color:var(--text)">0 terpilih</span>
+  <div style="display:flex;gap:8px;">
+    <button onclick="printBulk('qr')" class="btn-primary" style="background:#8b5cf6;border-color:#8b5cf6;padding:6px 12px;font-size:11px">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-4v-4m-6 4h2m6 0v4m0-4h2m0 0v-4m-12 0h2M4 8V6a2 2 0 012-2h2m8 0h2a2 2 0 012 2v2m0 8v2a2 2 0 01-2 2h-2m-8 0H6a2 2 0 01-2-2v-2"/></svg>
+      Print QR Masal
+    </button>
+    <button onclick="printBulk('bar')" class="btn-primary" style="background:#0ea5e9;border-color:#0ea5e9;padding:6px 12px;font-size:11px">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-4v-4m-6 4h2m6 0v4m0-4h2m0 0v-4m-12 0h2M4 8V6a2 2 0 012-2h2m8 0h2a2 2 0 012 2v2m0 8v2a2 2 0 01-2 2h-2m-8 0H6a2 2 0 01-2-2v-2"/></svg>
+      Print Barcode Masal
+    </button>
+  </div>
+</div>
 
 <!-- ── Modal Bin Card ── -->
 <div id="bincard-modal-container" style="display:none;position:fixed;inset:0;z-index:5000;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:12px">
@@ -861,6 +940,18 @@ function pageUrl($page, $search, $warehouse) {
       document.getElementById('form-title').innerText = '<?= lang('App.add_new_item') ?>';
       updateItemStatusSelector('1');
       updateExpirationFieldVisibility();
+
+      // Reset photo preview and file input
+      const previewImg = document.getElementById('photo-preview-img');
+      const placeholder = document.getElementById('photo-preview-placeholder');
+      if (previewImg) {
+        previewImg.src = '';
+        previewImg.style.display = 'none';
+      }
+      if (placeholder) placeholder.style.display = 'block';
+      const fileInput = document.getElementById('photo-input');
+      if (fileInput) fileInput.value = '';
+
       c.style.display = 'flex';
     }
   }
@@ -881,8 +972,47 @@ function pageUrl($page, $search, $warehouse) {
     document.getElementById('form-title').innerText  = '<?= lang('App.edit_item') ?>';
     updateItemStatusSelector(item.is_active !== undefined ? item.is_active : 1);
     updateExpirationFieldVisibility();
+
+    // Set photo preview if exists
+    const previewImg = document.getElementById('photo-preview-img');
+    const placeholder = document.getElementById('photo-preview-placeholder');
+    const fileInput = document.getElementById('photo-input');
+    if (fileInput) fileInput.value = '';
+
+    if (item.photo) {
+      if (previewImg) {
+        previewImg.src = '<?= base_url("uploads/items/") ?>/' + item.photo;
+        previewImg.style.display = 'block';
+      }
+      if (placeholder) placeholder.style.display = 'none';
+    } else {
+      if (previewImg) {
+        previewImg.src = '';
+        previewImg.style.display = 'none';
+      }
+      if (placeholder) placeholder.style.display = 'block';
+    }
+
     document.getElementById('item-form-container').style.display = 'flex';
   }
+
+  /* ── Handle Dynamic Photo Preview on Selection ── */
+  document.getElementById('photo-input')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const previewImg = document.getElementById('photo-preview-img');
+    const placeholder = document.getElementById('photo-preview-placeholder');
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        if (previewImg) {
+          previewImg.src = e.target.result;
+          previewImg.style.display = 'block';
+        }
+        if (placeholder) placeholder.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
 
   async function toggleItemStatus(id, currentlyActive) {
     const dk = document.documentElement.classList.contains('dark');
@@ -1141,6 +1271,95 @@ function pageUrl($page, $search, $warehouse) {
     } catch(e) { console.error(e); }
   }
 
+  /* ── Bulk Actions ── */
+  function toggleCheckAll(source) {
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+    updateBulkActionState();
+  }
+
+  function updateBulkActionState() {
+    const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+    const bar = document.getElementById('bulk-action-bar');
+    const count = document.getElementById('bulk-count');
+    if (checkboxes.length > 0) {
+      count.innerText = checkboxes.length + ' terpilih';
+      bar.style.display = 'flex';
+    } else {
+      bar.style.display = 'none';
+      const checkAll = document.getElementById('checkAll');
+      if (checkAll) checkAll.checked = false;
+    }
+  }
+
+  function printBulk(type) {
+    const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+    if (checkboxes.length === 0) return;
+
+    const items = Array.from(checkboxes).map(cb => ({
+      name: cb.getAttribute('data-name'),
+      code: cb.getAttribute('data-code')
+    }));
+
+    const win = window.open('', '_blank');
+    let html = `
+      <!DOCTYPE html><html><head><title>Print Masal</title>
+      <style>
+        *{margin:0;padding:0;box-sizing:border-box} 
+        body{font-family:'Outfit',sans-serif;padding:20px;background:#fff;}
+        .grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));gap:15px;align-items:start;justify-items:center}
+        .item-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding:12px;border:1.5px dashed #ccc;border-radius:12px;width:100%;}
+        h2{font-size:12px;font-weight:800;margin-bottom:2px;width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        p{font-size:10px;color:#666;margin-bottom:10px;font-family:monospace;}
+        .code-container{display:flex;justify-content:center;width:100%;min-height:80px;align-items:center;}
+        @media print {
+          .grid { gap: 10px; }
+          .item-card { break-inside: avoid; border: 1.5px dashed #999; }
+        }
+      </style>
+      <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"><\/script>
+      <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+      </head>
+      <body>
+      <div class="grid">
+    `;
+
+    items.forEach((item, idx) => {
+      html += `
+        <div class="item-card">
+          <h2>${item.name}</h2>
+          <p>${item.code}</p>
+          <div class="code-container" id="code-${idx}">
+            ${type === 'bar' ? `<svg id="svg-${idx}"></svg>` : ''}
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+      </div>
+      <script>
+        window.onload = function() {
+          const items = ${JSON.stringify(items)};
+          items.forEach((item, idx) => {
+            if ('${type}' === 'qr') {
+              new QRCode(document.getElementById('code-' + idx), { text: item.code, width: 100, height: 100, correctLevel: QRCode.CorrectLevel.M });
+            } else {
+              try {
+                JsBarcode('#svg-' + idx, item.code, { format: 'CODE128', width: 1.5, height: 40, displayValue: true, fontSize: 10, margin: 4 });
+              } catch(e) { console.warn(e); }
+            }
+          });
+          setTimeout(() => { window.print(); window.close(); }, 800);
+        };
+      <\/script>
+      </body></html>
+    `;
+
+    win.document.write(html);
+    win.document.close();
+  }
+
   /* ── QR / Barcode Modal ── */
   let _qrCurrentTab = 'qr';
 
@@ -1308,6 +1527,24 @@ function pageUrl($page, $search, $warehouse) {
         a.click();
       }
     }
+
+    // Auto-open Add Item form if add_code parameter is present (redirected from scan page)
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const addCode = urlParams.get('add_code');
+      if (addCode) {
+        const container = document.getElementById('item-form-container');
+        if (container) {
+          toggleForm();
+          const codeInput = document.getElementById('code');
+          if (codeInput) codeInput.value = addCode;
+          // Clean up URL without reloading
+          const url = new URL(window.location);
+          url.searchParams.delete('add_code');
+          window.history.replaceState({}, '', url);
+        }
+      }
+    });
 </script>
 
 <!-- QRCode + JsBarcode libraries -->

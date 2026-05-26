@@ -12,7 +12,7 @@ class ItemModel extends AppModel
     protected $protectFields    = true;
     protected $allowedFields    = [
         'warehouse_id', 'code', 'name', 'unit',
-        'initial_stock', 'current_stock', 'min_stock', 'expired_date', 'is_active',
+        'initial_stock', 'current_stock', 'min_stock', 'expired_date', 'is_active', 'photo',
         'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_by',
     ];
 
@@ -22,6 +22,11 @@ class ItemModel extends AppModel
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
 
+    /**
+     * Check if active status represents active state.
+     *
+     * @param mixed $value
+     */
     public static function isActive($value): bool
     {
         return (int) ($value ?? 1) === 1;

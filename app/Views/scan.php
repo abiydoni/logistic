@@ -2,6 +2,141 @@
 <?php $this->setVar('hideBottomNav', true); ?>
 
 <?= $this->section('content') ?>
+<style>
+/* Premium Adaptive Scanner Theme */
+.scan-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: radial-gradient(circle at 50% 30%, #f1f5f9, #cbd5e1);
+  padding: 2rem 1rem;
+  color: #0f172a;
+  font-family: 'Outfit', sans-serif;
+}
+html.dark .scan-page {
+  background: radial-gradient(circle at 50% 30%, #1e293b, #0f172a);
+  color: #fff;
+}
+.scan-status-bar {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 12px 20px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+html.dark .scan-status-bar {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+.scan-status-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #10b981; box-shadow: 0 0 10px #10b981;
+  animation: pulse 1.5s infinite alternate;
+}
+@keyframes pulse {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(1.1); opacity: 1; }
+}
+.scan-status-title { font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: 0.5px; }
+html.dark .scan-status-title { color: #fff; }
+.scan-status-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+html.dark .scan-status-sub { color: #94a3b8; }
+.scan-pause-btn {
+  background: rgba(0, 0, 0, 0.05); border: none; color: #0f172a;
+  padding: 6px 12px; border-radius: 8px; font-size: 12px;
+  font-weight: 600; cursor: pointer; transition: background 0.2s;
+}
+.scan-pause-btn:hover { background: rgba(0, 0, 0, 0.1); }
+html.dark .scan-pause-btn { background: rgba(255, 255, 255, 0.1); color: #fff; }
+html.dark .scan-pause-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.scan-viewport-wrap {
+  position: relative; width: 100%; max-width: 500px;
+  height: 400px; border-radius: 24px 24px 0 0; overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  background: #000;
+}
+#reader { width: 100%; height: 100%; }
+#reader video { object-fit: cover !important; width: 100% !important; height: 100% !important; }
+.scan-frame-overlay {
+  position: absolute; inset: 0; pointer-events: none;
+  z-index: 10; display: flex; align-items: center; justify-content: center;
+}
+.scan-frame-box { width: 70%; height: 60%; position: relative; display: block !important; }
+.scan-corner {
+  position: absolute; width: 40px; height: 40px;
+  border-color: #10b981; border-style: solid; border-width: 0;
+  display: block !important; transition: all 0.3s ease;
+}
+.scan-corner.tl { top: 0; left: 0; border-top-width: 4px; border-left-width: 4px; border-top-left-radius: 12px; }
+.scan-corner.tr { top: 0; right: 0; border-top-width: 4px; border-right-width: 4px; border-top-right-radius: 12px; }
+.scan-corner.bl { bottom: 0; left: 0; border-bottom-width: 4px; border-left-width: 4px; border-bottom-left-radius: 12px; }
+.scan-corner.br { bottom: 0; right: 0; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 12px; }
+.scan-laser {
+  position: absolute; top: 10%; left: 5%; right: 5%; height: 2px;
+  background: #10b981; box-shadow: 0 0 15px 2px #10b981;
+  animation: scan-anim 2.5s infinite linear; opacity: 0.8;
+}
+@keyframes scan-anim { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
+.scan-toolbar { margin-top: 0; display: flex; justify-content: center; width: 100%; max-width: 500px; }
+.scan-tool-btn {
+  width: 100%; display: flex; flex-direction: row;
+  align-items: center; justify-content: center; gap: 10px;
+  color: #0f172a; background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1); border-top: none;
+  border-radius: 0 0 20px 20px; padding: 14px 20px;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
+  cursor: pointer; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+.scan-tool-btn:hover, .scan-tool-btn.active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: #6366f1; color: #4f46e5;
+}
+html.dark .scan-tool-btn {
+  color: #e2e8f0; background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(255, 255, 255, 0.15); border-top: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+html.dark .scan-tool-btn:hover, html.dark .scan-tool-btn.active {
+  background: rgba(99, 102, 241, 0.25); color: #fff;
+}
+.scan-tool-btn svg { width: 20px; height: 20px; opacity: 0.9; }
+.scan-floating-actions {
+  position: absolute; top: 16px; right: 16px;
+  display: flex; flex-direction: row; gap: 12px; z-index: 20; pointer-events: auto;
+}
+.scan-float-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.1); color: #0f172a;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+.scan-float-btn:hover, .scan-float-btn.active {
+  background: rgba(99, 102, 241, 0.15); border-color: #6366f1; color: #4f46e5;
+}
+html.dark .scan-float-btn {
+  background: rgba(30, 41, 59, 0.7); border-color: rgba(255, 255, 255, 0.2);
+  color: #fff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
+  background: rgba(99, 102, 241, 0.8); border-color: #6366f1; color: #fff;
+}
+.scan-float-btn svg { width: 20px; height: 20px; }
+</style>
+
 <div class="scan-page" id="scan-app"
   data-url-process="<?= base_url('scan/process') ?>"
   data-url-mutate="<?= base_url('inventory/mutate') ?>"
@@ -23,27 +158,29 @@
   </div>
 
   <!-- Camera -->
-  <div class="scan-viewport-wrap md-card" style="padding:0;border:none;overflow:hidden">
+  <div class="scan-viewport-wrap md-card">
     <div id="reader"></div>
     <div class="scan-frame-overlay" id="scan-overlay">
-      <div class="scan-corner tl"></div>
-      <div class="scan-corner tr"></div>
-      <div class="scan-corner bl"></div>
-      <div class="scan-corner br"></div>
-      <div class="scan-frame-box"></div>
+      <div class="scan-frame-box">
+        <div class="scan-corner tl"></div>
+        <div class="scan-corner tr"></div>
+        <div class="scan-corner bl"></div>
+        <div class="scan-corner br"></div>
+        <div class="scan-laser"></div>
+      </div>
+      <!-- Floating action buttons -->
+      <div class="scan-floating-actions">
+        <button type="button" class="scan-float-btn" id="btn-flash" hidden title="<?= lang('App.toggle_flash') ?>">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        </button>
+        <button type="button" class="scan-float-btn" id="btn-switch-cam" title="<?= lang('App.switch_camera') ?>">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </button>
+      </div>
     </div>
-  </div>
+  </div>  <!-- Toolbar -->
 
-  <!-- Toolbar -->
   <div class="scan-toolbar">
-    <button type="button" class="scan-tool-btn" id="btn-flash" hidden>
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-      <span><?= lang('App.toggle_flash') ?></span>
-    </button>
-    <button type="button" class="scan-tool-btn" id="btn-switch-cam">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-      <span><?= lang('App.switch_camera') ?></span>
-    </button>
     <button type="button" class="scan-tool-btn" id="btn-toggle-manual">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
       <span><?= lang('App.manual_entry') ?></span>
@@ -265,26 +402,22 @@
         return;
       }
       const t0 = ctx.currentTime;
-      const notes = [
-        { freq: 523.25, at: 0, dur: 0.12 },
-        { freq: 659.25, at: 0.1, dur: 0.14 },
-        { freq: 783.99, at: 0.22, dur: 0.2 },
-      ];
-      notes.forEach(function(n) {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(n.freq, t0 + n.at);
-        const start = t0 + n.at;
-        const end = start + n.dur;
-        gain.gain.setValueAtTime(0.0001, start);
-        gain.gain.exponentialRampToValueAtTime(0.28, start + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, end);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(start);
-        osc.stop(end + 0.02);
-      });
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      // Suara "Ting" yang jernih dan beresonansi seperti bel
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1200, t0); // Nada tinggi
+      osc.frequency.exponentialRampToValueAtTime(1100, t0 + 0.1); 
+
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(0.7, t0 + 0.02); // Attack cepat
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 1.2); // Decay halus dan panjang
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 1.2);
     } catch (e) { /* autoplay policy or unsupported */ }
   }
 
@@ -304,11 +437,7 @@
   app.addEventListener('keydown', markUserInteracted, { once: true });
   app.addEventListener('touchstart', markUserInteracted, { once: true, passive: true });
 
-  function qrbox(w, h) {
-    return { width: Math.floor(w * 0.82), height: Math.floor(h * 0.42) };
-  }
-
-  const config = { fps: 12, qrbox, aspectRatio: 1.333 };
+  const config = { fps: 12, aspectRatio: 1.333 };
 
   function setStatus(mode, title, sub) {
     const bar = el('scan-status');
@@ -482,16 +611,24 @@
     }
   }
 
-  function showNotFound(message) {
+  function showNotFound(message, scannedCode) {
     currentItem = null;
     closeResultModal();
     setStatus('is-error', LANG.notFound, message);
     swalScan({
-      icon: 'error',
+      icon: 'warning',
       title: LANG.notFound,
-      text: message,
-      confirmButtonText: 'OK',
-    }).then(() => resumeScanning());
+      text: message + (scannedCode ? '\n\nApakah Anda ingin menambahkan barang baru dengan kode ini?' : ''),
+      showCancelButton: !!scannedCode,
+      confirmButtonText: scannedCode ? 'Ya, Tambah Barang' : 'OK',
+      cancelButtonText: 'Batal'
+    }).then((res) => {
+      if (res.isConfirmed && scannedCode) {
+        window.location.href = '<?= base_url('inventory/items') ?>?add_code=' + encodeURIComponent(scannedCode);
+      } else {
+        resumeScanning();
+      }
+    });
   }
 
   function pushHistory(entry) {
@@ -563,7 +700,7 @@
         safeVibrate(80);
         playScanSuccessSound();
       } else {
-        showNotFound(data.message || LANG.notFound);
+        showNotFound(data.message || LANG.notFound, trimmed);
         pushHistory({
           code: trimmed,
           name: LANG.notFound,
