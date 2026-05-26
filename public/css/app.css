@@ -2899,10 +2899,9 @@ body .swal2-container.swal-scan-container {
   background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(6px);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding: 12px;
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding: 16px;
   animation: scan-modal-fade 0.2s ease;
 }
 
@@ -2916,22 +2915,18 @@ body .swal2-container.swal-scan-container {
   max-width: 480px;
   max-height: 88vh;
   overflow-y: auto;
-  border-radius: var(--r-xl) var(--r-xl) var(--r-md) var(--r-md);
-  animation: scan-modal-slide 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  border-radius: var(--r-xl);
+  animation: scan-modal-pop 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   -webkit-overflow-scrolling: touch;
 }
 
-@keyframes scan-modal-slide {
-  from { transform: translateY(100%); opacity: 0.6; }
-  to { transform: translateY(0); opacity: 1; }
+@keyframes scan-modal-pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 .scan-modal-handle {
-  width: 40px;
-  height: 4px;
-  border-radius: 4px;
-  background: var(--border);
-  margin: 10px auto 4px;
+  display: none;
 }
 
 .scan-modal-close {

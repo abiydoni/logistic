@@ -135,6 +135,17 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
   background: rgba(99, 102, 241, 0.8); border-color: #6366f1; color: #fff;
 }
 .scan-float-btn svg { width: 20px; height: 20px; }
+
+/* Simple History List */
+.scan-history-list { padding: 0; margin: 0; list-style: none; }
+.scan-history-item {
+  display: flex !important; align-items: center !important; justify-content: space-between !important;
+  background: transparent !important; border: none !important; border-bottom: 1px dashed rgba(150,150,150,0.2) !important;
+  border-radius: 0 !important; padding: 10px 4px !important; box-shadow: none !important;
+}
+.scan-history-item:last-child { border-bottom: none !important; }
+.scan-history-item .name { font-size: 13px !important; font-weight: 600 !important; }
+.scan-history-item .meta { font-size: 10px !important; opacity: 0.7 !important; }
 </style>
 
 <div class="scan-page" id="scan-app"
@@ -186,23 +197,24 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
       <span><?= lang('App.manual_entry') ?></span>
     </button>
   </div>
-  <p class="text-[10px] text-center" style="color:var(--text-faint)"><?= lang('App.flash_tip') ?></p>
 
-  <!-- Manual input -->
-  <div class="md-card scan-manual-card hidden" id="manual-panel">
-    <div class="scan-section-label"><?= lang('App.or_manual_input') ?></div>
-    <div class="scan-manual-row">
-      <input type="text" id="manual-code" placeholder="<?= lang('App.manual_code_placeholder') ?>" autocomplete="off" inputmode="text">
-      <button type="button" class="btn-primary px-4 py-3 text-xs shrink-0" id="btn-manual-submit"><?= lang('App.process') ?></button>
+  <div class="md-card scan-bottom-panel" style="width: 100%; max-width: 500px; padding: 0; margin-top: 12px; flex: 0 0 auto; overflow: hidden;">
+    <!-- Manual input -->
+    <div class="scan-manual-card hidden" id="manual-panel" style="border-bottom: 1px solid var(--border); background: var(--surface-2); padding: 12px 14px;">
+      <div class="scan-section-label" style="margin-bottom: 8px;"><?= lang('App.or_manual_input') ?></div>
+      <div class="scan-manual-row" style="margin-top: 0;">
+        <input type="text" id="manual-code" placeholder="<?= lang('App.manual_code_placeholder') ?>" autocomplete="off" inputmode="text" style="background: var(--surface); border: 1px solid var(--border);">
+        <button type="button" class="btn-primary px-4 py-3 text-xs shrink-0" id="btn-manual-submit"><?= lang('App.process') ?></button>
+      </div>
     </div>
-  </div>
 
-  <!-- History -->
-  <div class="md-card p-4">
-    <div class="scan-section-label"><?= lang('App.recent_scans') ?></div>
-    <ul class="scan-history-list" id="scan-history">
-      <li class="scan-empty-history" id="history-empty"><?= lang('App.empty_data') ?></li>
-    </ul>
+    <!-- History & Tip -->
+    <div style="padding: 12px 14px;">
+      <div class="scan-section-label" style="margin-bottom: 8px;"><?= lang('App.recent_scans') ?></div>
+      <ul class="scan-history-list" id="scan-history" style="max-height: 140px; margin-bottom: 0;">
+        <li class="scan-empty-history" id="history-empty" style="padding: 8px; font-size: 11px;"><?= lang('App.empty_data') ?></li>
+      </ul>
+    </div>
   </div>
 
   <!-- Hasil scan (modal) -->
@@ -472,9 +484,9 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
       <div style="width:48px;height:48px;border-radius:16px;background:rgba(239,68,68,.15);display:flex;align-items:center;justify-content:center;margin-bottom:12px;color:#f87171">
         <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"/></svg>
       </div>
-      <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#fca5a5;margin-bottom:6px"><?= esc(lang('App.camera_access_failed')) ?></p>
+      <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#fca5a5;margin-bottom:6px"><?= lang('App.camera_access_failed') ?></p>
       <p style="font-size:11px;color:#94a3b8;max-width:240px;line-height:1.5;margin-bottom:16px">${msg}</p>
-      <button type="button" onclick="window.__scanStartCam && window.__scanStartCam()" style="padding:10px 18px;background:#6366f1;color:#fff;font-size:11px;font-weight:800;border-radius:12px;border:none"> <?= esc(lang('App.connect_camera')) ?></button>
+      <button type="button" onclick="window.__scanStartCam && window.__scanStartCam()" style="padding:10px 18px;background:#6366f1;color:#fff;font-size:11px;font-weight:800;border-radius:12px;border:none"> <?= lang('App.connect_camera') ?></button>
     </div>`;
     setStatus('is-error', LANG.notFound, msg);
   }
@@ -514,8 +526,22 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
 
       setTimeout(() => {
         try {
-          const caps = html5QrcodeScanner.getRunningTrackCapabilities();
-          if (caps?.torch) el('btn-flash')?.classList.remove('hidden');
+          const video = document.querySelector('#reader video');
+          const track = video?.srcObject?.getVideoTracks()[0];
+          const caps = track?.getCapabilities() || (typeof html5QrcodeScanner.getRunningTrackCapabilities === 'function' ? html5QrcodeScanner.getRunningTrackCapabilities() : {});
+          
+          if (caps?.torch || facingMode === 'environment') {
+            if (el('btn-flash')) {
+              el('btn-flash').hidden = false;
+              el('btn-flash').removeAttribute('hidden');
+              el('btn-flash').style.display = 'flex';
+            }
+          } else {
+            if (el('btn-flash')) {
+              el('btn-flash').hidden = true;
+              el('btn-flash').style.display = 'none';
+            }
+          }
         } catch (e) {}
       }, 600);
     } catch (err) {
@@ -532,12 +558,30 @@ html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
   async function toggleFlash() {
     if (!html5QrcodeScanner || !isScanning) return;
     try {
-      const caps = html5QrcodeScanner.getRunningTrackCapabilities();
-      if (!caps?.torch) return;
       isFlashOn = !isFlashOn;
-      await html5QrcodeScanner.applyVideoConstraints({ advanced: [{ torch: isFlashOn }] });
+      
+      let success = false;
+      if (typeof html5QrcodeScanner.applyVideoConstraints === 'function') {
+        try {
+          await html5QrcodeScanner.applyVideoConstraints({ advanced: [{ torch: isFlashOn }] });
+          success = true;
+        } catch (e) { console.warn("Library torch failed", e); }
+      }
+      
+      if (!success) {
+        const video = document.querySelector('#reader video');
+        const track = video?.srcObject?.getVideoTracks()[0];
+        if (track) {
+          await track.applyConstraints({ advanced: [{ torch: isFlashOn }] });
+        }
+      }
+      
       el('btn-flash')?.classList.toggle('active', isFlashOn);
-    } catch (e) { console.warn(e); }
+    } catch (e) {
+      console.warn("Flash toggle error:", e);
+      // Revert state if failed
+      isFlashOn = !isFlashOn;
+    }
   }
 
   async function pauseScanner() {
