@@ -531,8 +531,8 @@ function pageUrl($page, $search, $warehouse) {
             <img id="photo-preview-img" style="display:none;width:100%;height:100%;object-fit:cover" alt="Preview">
           </div>
           <div style="flex:1">
-            <input type="file" name="photo" id="photo-input" accept="image/*" style="display:none">
-            <button type="button" onclick="document.getElementById('photo-input').click()" class="btn-primary" style="padding:6px 10px;font-size:10px;border-radius:6px;width:auto;background:var(--surface);color:var(--text-muted);border:1px solid var(--border);gap:4px">
+            <input type="file" name="photo" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoFile(this)">
+            <button type="button" onclick="document.getElementById('photo-input').click()" class="btn-primary" style="padding:6px 10px;font-size:10px;border-radius:6px;width:auto;background:var(--surface);color:var(--text-muted);border:1px solid var(--border);gap:4px" title="Pilih foto atau ambil dari kamera">
               <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
               Pilih Foto
             </button>
@@ -750,13 +750,11 @@ function pageUrl($page, $search, $warehouse) {
 <div id="bulk-action-bar" class="no-print" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--surface);box-shadow:0 10px 25px -5px rgba(0,0,0,0.2), 0 8px 10px -6px rgba(0,0,0,0.1);padding:12px 20px;border-radius:12px;z-index:4000;border:1px solid var(--border);align-items:center;gap:16px;">
   <span id="bulk-count" style="font-size:13px;font-weight:700;color:var(--text)">0 terpilih</span>
   <div style="display:flex;gap:8px;">
-    <button onclick="printBulk('qr')" class="btn-primary" style="background:#8b5cf6;border-color:#8b5cf6;padding:6px 12px;font-size:11px">
-      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-4v-4m-6 4h2m6 0v4m0-4h2m0 0v-4m-12 0h2M4 8V6a2 2 0 012-2h2m8 0h2a2 2 0 012 2v2m0 8v2a2 2 0 01-2 2h-2m-8 0H6a2 2 0 01-2-2v-2"/></svg>
-      Print QR Masal
+    <button onclick="printBulk('qr')" class="btn-primary" style="background:#8b5cf6;border-color:#8b5cf6;padding:6px 10px" title="Print QR Masal">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-4v-4m-6 4h2m6 0v4m0-4h2m0 0v-4m-12 0h2M4 8V6a2 2 0 012-2h2m8 0h2a2 2 0 012 2v2m0 8v2a2 2 0 01-2 2h-2m-8 0H6a2 2 0 01-2-2v-2"/></svg>
     </button>
-    <button onclick="printBulk('bar')" class="btn-primary" style="background:#0ea5e9;border-color:#0ea5e9;padding:6px 12px;font-size:11px">
-      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right:4px"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-4v-4m-6 4h2m6 0v4m0-4h2m0 0v-4m-12 0h2M4 8V6a2 2 0 012-2h2m8 0h2a2 2 0 012 2v2m0 8v2a2 2 0 01-2 2h-2m-8 0H6a2 2 0 01-2-2v-2"/></svg>
-      Print Barcode Masal
+    <button onclick="printBulk('bar')" class="btn-primary" style="background:#0ea5e9;border-color:#0ea5e9;padding:6px 10px" title="Print Barcode Masal">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h1M4 10h1M4 14h1M4 18h1M8 6h1v12H8zm4 0h1v12h-1zm4 0h1v12h-1zm4 0h1M20 10h-1M20 14h-1M20 18h-1"/></svg>
     </button>
   </div>
 </div>
@@ -774,9 +772,8 @@ function pageUrl($page, $search, $warehouse) {
         Bin Card / Kartu Stok
       </h4>
       <div style="display:flex;gap:4px">
-        <button onclick="printBinCard()" class="btn-primary" style="padding:4px 8px;font-size:10px;gap:4px;background:#10b981;border-color:#10b981;border-radius:6px">
-          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-          Print
+        <button onclick="printBinCard()" class="btn-primary" style="padding:4px 8px;background:#10b981;border-color:#10b981;border-radius:6px" title="Print Bin Card">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
         </button>
         <button onclick="closeBinCard()" style="width:24px;height:24px;border-radius:6px;border:none;background:var(--surface-2);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center">
           <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -996,23 +993,27 @@ function pageUrl($page, $search, $warehouse) {
     document.getElementById('item-form-container').style.display = 'flex';
   }
 
-  /* ── Handle Dynamic Photo Preview on Selection ── */
-  document.getElementById('photo-input')?.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    const previewImg = document.getElementById('photo-preview-img');
-    const placeholder = document.getElementById('photo-preview-placeholder');
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        if (previewImg) {
-          previewImg.src = e.target.result;
-          previewImg.style.display = 'block';
-        }
-        if (placeholder) placeholder.style.display = 'none';
-      };
-      reader.readAsDataURL(file);
+  /* ── Shared Photo Preview Handler ── */
+  function handlePhotoFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const previewImg   = document.getElementById('photo-preview-img');
+    const placeholder  = document.getElementById('photo-preview-placeholder');
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      if (previewImg) { previewImg.src = e.target.result; previewImg.style.display = 'block'; }
+      if (placeholder) placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+    // If triggered from camera input, transfer file to the named photo-input so form submits it
+    if (input.id === 'photo-camera-input') {
+      try {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('photo-input').files = dt.files;
+      } catch(e) { /* DataTransfer not supported – file still previews but won't upload on older browsers */ }
     }
-  });
+  }
 
   async function toggleItemStatus(id, currentlyActive) {
     const dk = document.documentElement.classList.contains('dark');

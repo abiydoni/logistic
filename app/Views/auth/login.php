@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title><?= lang('App.login_title'); ?> - AppsBeem</title>
+  <title><?= lang('App.login_title'); ?> - appsbee</title>
   
   <!-- Prevent theme flash (login: localStorage only; default light) -->
   <script>
@@ -116,7 +116,9 @@
   </div>
 
   <div class="login-footer-note">
-    &copy; <?= date('Y'); ?> AppsBeem Logistic PWA. All rights reserved.
+    &copy; <?= date('Y'); ?> 
+    <a href="https://appsbee.my.id" target="_blank" rel="noopener noreferrer" style="color:var(--text-faint);text-decoration:none;font-size:11px;opacity:.7;transition:opacity .2s" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='.7'">appsbee</a>
+    Logistic PWA. All rights reserved.
   </div>
 
   <script>
