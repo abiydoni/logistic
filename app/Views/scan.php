@@ -772,6 +772,12 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
     currentItem = null;
     closeResultModal();
     setStatus('is-error', LANG.notFound, message);
+
+    // PAUSE SCANNER agar kamera tidak men-scan berkali-kali saat pop-up alert terbuka
+    if (html5QrcodeScanner && isScanning && !isPaused) {
+      try { html5QrcodeScanner.pause(true); isPaused = true; updatePauseBtn(); } catch (e) {}
+    }
+
     swalScan({
       icon: 'warning',
       title: LANG.notFound,
@@ -830,7 +836,15 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
 
   async function processCode(code, fromHistory = false) {
     const trimmed = (code || '').trim();
+
+    // Kosongkan otomatis input teks agar physical scanner tidak menyambung kode jadi panjang (misal 123123)
+    const manualInput = el('manual-code');
+    if (manualInput) manualInput.value = '';
+
     if (!trimmed || processing) return;
+
+    // Jika sedang ada pop-up (SweetAlert) atau modal barang terbuka, tahan/blokir scan baru
+    if (currentItem || (typeof Swal !== 'undefined' && Swal.isVisible())) return;
 
     const now = Date.now();
     if (!fromHistory && trimmed === lastCode && now - lastCodeAt < 2500) return;
