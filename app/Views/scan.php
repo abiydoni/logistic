@@ -551,11 +551,19 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
 
       html5QrcodeScanner = new Html5Qrcode('reader', { verbose: false });
 
-      // Strategi 1: Coba kamera dengan device ID spesifik (back/belakang)
-      // — lebih responsif dan mendukung flash lebih baik di mobile
+      // Strategi 1: Fast start menggunakan generic facingMode (Instant start, bypass enumerasi HW lambat)
       let started = false;
-      if (facingMode === 'environment') {
-        try {
+      try {
+        console.log('[Scanner] Strategi 1: Fast start (facingMode =', facingMode, ')');
+        await html5QrcodeScanner.start({ facingMode }, config, onScanSuccess, () => {});
+        started = true;
+      } catch (e1) {
+        console.warn('[Scanner] Strategi 1 (Fast Start) gagal, mencoba fallback ke enumerasi perangkat:', e1);
+      }
+
+      // Strategi 2: Enumerasi perangkat (Lambat, tapi sangat presisi untuk fallback)
+      if (!started) {
+        if (facingMode === 'environment') {
           const devices = await Html5Qrcode.getCameras();
           let backId = null;
           if (devices && devices.length > 0) {
@@ -565,23 +573,19 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
                 backId = device.id;
               }
             }
-            // Fallback: ambil kamera terakhir jika tidak ada label back
             if (!backId && devices.length > 1) backId = devices[devices.length - 1].id;
           }
           if (backId) {
-            console.log('[Scanner] Strategi 1: Camera ID spesifik', backId);
+            console.log('[Scanner] Strategi 2: Camera ID spesifik', backId);
             await html5QrcodeScanner.start(backId, config, onScanSuccess, () => {});
             started = true;
           }
-        } catch (e1) {
-          console.warn('[Scanner] Strategi 1 gagal, coba facingMode:', e1);
         }
-      }
-
-      // Strategi 2: Generic facingMode (fallback)
-      if (!started) {
-        console.log('[Scanner] Strategi 2: facingMode =', facingMode);
-        await html5QrcodeScanner.start({ facingMode }, config, onScanSuccess, () => {});
+        
+        // Terakhir, jika tidak ada fallback yang berhasil
+        if (!started) {
+           throw new Error("Gagal memulai kamera dengan strategi apapun.");
+        }
       }
 
       isScanning = true;
