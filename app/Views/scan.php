@@ -82,11 +82,22 @@ html.dark .scan-pause-btn:hover { background: rgba(255, 255, 255, 0.2); }
 .scan-corner.bl { bottom: 0; left: 0; border-bottom-width: 4px; border-left-width: 4px; border-bottom-left-radius: 12px; }
 .scan-corner.br { bottom: 0; right: 0; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 12px; }
 .scan-laser {
-  position: absolute; top: 10%; left: 5%; right: 5%; height: 2px;
+  position: absolute;
+  /* Posisi awal laser: 10% dari atas frame box */
+  top: 10%;
+  left: 5%; right: 5%; height: 2px;
   background: #10b981; box-shadow: 0 0 15px 2px #10b981;
   animation: scan-anim 2.5s infinite linear; opacity: 0.8;
+  /* GPU-accelerated: hindari layout reflow setiap frame */
+  will-change: transform;
+  transform: translateZ(0);
 }
-@keyframes scan-anim { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
+/* Gunakan transform (GPU) bukan top (layout reflow) */
+@keyframes scan-anim {
+  0%   { transform: translateY(0%) translateZ(0); }
+  50%  { transform: translateY(800%) translateZ(0); }
+  100% { transform: translateY(0%) translateZ(0); }
+}
 .scan-toolbar { margin-top: 0; display: flex; justify-content: center; width: 100%; max-width: 500px; }
 .scan-tool-btn {
   width: 100%; display: flex; flex-direction: row;
@@ -1023,9 +1034,29 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
   window.addEventListener('pagehide', stopCamera);
   window.addEventListener('beforeunload', stopCamera);
 
-  // Inisialisasi langsung (bukan via DOMContentLoaded) agar tidak menumpuk
-  // saat navigasi PJAX berulang ke halaman ini.
-  (async () => {
+  // Inisialisasi kamera: tunggu library Html5Qrcode tersedia dulu
+  // (PJAX bisa mengeksekusi script sebelum CDN selesai dimuat)
+  (function initWhenReady() {
+    if (typeof Html5Qrcode === 'undefined') {
+      // Library belum ada — coba lagi setiap 100ms, timeout 8 detik
+      let tries = 0;
+      const check = setInterval(() => {
+        tries++;
+        if (typeof Html5Qrcode !== 'undefined') {
+          clearInterval(check);
+          runInit();
+        } else if (tries > 80) {
+          clearInterval(check);
+          const readerEl = el('reader');
+          if (readerEl) readerEl.innerHTML = '<div style="padding:20px;text-align:center;color:#f87171;font-size:12px;font-weight:700">Gagal memuat library scanner.<br><button onclick="location.reload()" style="margin-top:10px;padding:8px 16px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer">Refresh Halaman</button></div>';
+        }
+      }, 100);
+    } else {
+      runInit();
+    }
+  })();
+
+  async function runInit() {
     renderHistory();
 
     // Cek konteks aman (HTTPS/localhost) — kamera memerlukan secure context
@@ -1040,10 +1071,8 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
       return;
     }
 
-    // startCamera sudah menangani enumerasi device + fallback facingMode
-    // Tidak perlu pre-request getUserMedia terpisah (menghindari delay ganda)
     await startCamera('environment');
-  })();
+  }
 
   // Restart kamera jika halaman kembali terlihat (misal: pindah tab lalu balik)
   document.addEventListener('visibilitychange', () => {

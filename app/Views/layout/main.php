@@ -343,12 +343,18 @@
           const el = document.createElement('script');
           Array.from(oldScript.attributes).forEach(attr => el.setAttribute(attr.name, attr.value));
           if (oldScript.src) {
+            // Skip chart.js jika sudah ada
             if (oldScript.src.includes('chart.js') && typeof Chart !== 'undefined') {
               resolve();
               return;
             }
+            // Skip html5-qrcode jika sudah ada (hindari double-load saat PJAX)
+            if (oldScript.src.includes('html5-qrcode') && typeof Html5Qrcode !== 'undefined') {
+              resolve();
+              return;
+            }
             el.onload = () => resolve();
-            el.onerror = reject;
+            el.onerror = () => resolve(); // jangan block chain jika gagal load library opsional
             el.src = oldScript.src;
             document.body.appendChild(el);
             return;
