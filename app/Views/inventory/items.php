@@ -531,7 +531,7 @@ function pageUrl($page, $search, $warehouse) {
             <img id="photo-preview-img" style="display:none;width:100%;height:100%;object-fit:cover" alt="Preview">
           </div>
           <div style="flex:1">
-            <input type="file" name="photo" id="photo-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoFile(this)">
+            <input type="file" name="photo" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoFile(this)">
             <button type="button" onclick="document.getElementById('photo-input').click()" class="btn-primary" style="padding:6px 10px;font-size:10px;border-radius:6px;width:auto;background:var(--surface);color:var(--text-muted);border:1px solid var(--border);gap:4px" title="Pilih foto atau ambil dari kamera">
               <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
               Pilih Foto
@@ -600,8 +600,8 @@ function pageUrl($page, $search, $warehouse) {
       }
       $isActive = \App\Models\ItemModel::isActive($item['is_active'] ?? 1);
       $rowBg = 'var(--surface)';
-      if ($isExpired)            $rowBg = 'rgba(239,68,68,.02)';
-      elseif ($isSoonExp || $isLowStock) $rowBg = 'rgba(245,158,11,.02)';
+      if ($isExpired)            $rowBg = 'rgba(239,68,68,.12)';
+      elseif ($isSoonExp || $isLowStock) $rowBg = 'rgba(245,158,11,.12)';
     ?>
     <div onclick="showBinCard(<?= $item['id'] ?>)" 
          class="item-card-row<?= $isActive ? '' : ' is-inactive' ?>"
