@@ -551,39 +551,58 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
 
       html5QrcodeScanner = new Html5Qrcode('reader', { verbose: false });
 
-      // Strategi 1: Fast start menggunakan generic facingMode (Instant start, bypass enumerasi HW lambat)
       let started = false;
-      try {
-        console.log('[Scanner] Strategi 1: Fast start (facingMode =', facingMode, ')');
-        await html5QrcodeScanner.start({ facingMode }, config, onScanSuccess, () => {});
-        started = true;
-      } catch (e1) {
-        console.warn('[Scanner] Strategi 1 (Fast Start) gagal, mencoba fallback ke enumerasi perangkat:', e1);
-      }
 
-      // Strategi 2: Enumerasi perangkat (Lambat, tapi sangat presisi untuk fallback)
-      if (!started) {
-        if (facingMode === 'environment') {
-          const devices = await Html5Qrcode.getCameras();
-          let backId = null;
-          if (devices && devices.length > 0) {
-            for (const device of devices) {
-              const label = (device.label || '').toLowerCase();
-              if (label.includes('back') || label.includes('belakang') || label.includes('rear')) {
-                backId = device.id;
-              }
-            }
-            if (!backId && devices.length > 1) backId = devices[devices.length - 1].id;
-          }
-          if (backId) {
-            console.log('[Scanner] Strategi 2: Camera ID spesifik', backId);
-            await html5QrcodeScanner.start(backId, config, onScanSuccess, () => {});
+      // Jika menggunakan kamera belakang, kita WAJIB menggunakan spesifik Device ID agar Lampu Flash berfungsi di Android.
+      if (facingMode === 'environment') {
+        // Strategi 1: Ambil dari Cache agar start INSTAN (tanpa enumerasi lambat)
+        let cachedBackId = localStorage.getItem('camera_back_id');
+        if (cachedBackId) {
+          try {
+            console.log('[Scanner] Strategi 1: Fast start dengan Cached ID', cachedBackId);
+            await html5QrcodeScanner.start(cachedBackId, config, onScanSuccess, () => {});
             started = true;
+          } catch (e1) {
+            console.warn('[Scanner] Strategi 1 (Cached ID) gagal, menghapus cache:', e1);
+            localStorage.removeItem('camera_back_id');
           }
         }
-        
-        // Terakhir, jika tidak ada fallback yang berhasil
+
+        // Strategi 2: Jika belum mulai (cache kosong/gagal), lakukan Enumerasi HW
         if (!started) {
+          try {
+            const devices = await Html5Qrcode.getCameras();
+            let backId = null;
+            if (devices && devices.length > 0) {
+              for (const device of devices) {
+                const label = (device.label || '').toLowerCase();
+                if (label.includes('back') || label.includes('belakang') || label.includes('rear') || label.includes('0')) {
+                  backId = device.id;
+                }
+              }
+              if (!backId && devices.length > 1) backId = devices[devices.length - 1].id;
+              if (!backId && devices.length === 1) backId = devices[0].id;
+            }
+            if (backId) {
+              console.log('[Scanner] Strategi 2: Camera ID spesifik', backId);
+              // SIMPAN KE CACHE agar loading berikutnya menjadi Instan!
+              localStorage.setItem('camera_back_id', backId);
+              await html5QrcodeScanner.start(backId, config, onScanSuccess, () => {});
+              started = true;
+            }
+          } catch (e2) {
+            console.warn('[Scanner] Strategi 2 gagal:', e2);
+          }
+        }
+      }
+
+      // Strategi 3: Fallback darurat ke generic facingMode (Bisa menyala tanpa Flash) atau untuk kamera depan
+      if (!started) {
+        try {
+          console.log('[Scanner] Strategi 3: Generic Fallback (facingMode =', facingMode, ')');
+          await html5QrcodeScanner.start({ facingMode }, config, onScanSuccess, () => {});
+          started = true;
+        } catch (e3) {
            throw new Error("Gagal memulai kamera dengan strategi apapun.");
         }
       }
