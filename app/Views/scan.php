@@ -503,7 +503,7 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
     activeVideoTrack = null;
     isFlashOn = false;
 
-    // Sembunyikan tombol flash sampai kita tahu torch didukung
+    // Sembunyikan tombol flash saat memulai ulang
     const flashBtn = el('btn-flash');
     if (flashBtn) { flashBtn.hidden = true; flashBtn.style.display = 'none'; flashBtn.classList.remove('active'); }
 
@@ -524,38 +524,65 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
 
       html5QrcodeScanner = new Html5Qrcode('reader', { verbose: false });
 
-      await html5QrcodeScanner.start(
-        { facingMode },
-        config,
-        onScanSuccess,
-        () => {}
-      );
+      // Strategi 1: Coba kamera dengan device ID spesifik (back/belakang)
+      // — lebih responsif dan mendukung flash lebih baik di mobile
+      let started = false;
+      if (facingMode === 'environment') {
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          let backId = null;
+          if (devices && devices.length > 0) {
+            for (const device of devices) {
+              const label = (device.label || '').toLowerCase();
+              if (label.includes('back') || label.includes('belakang') || label.includes('rear')) {
+                backId = device.id;
+              }
+            }
+            // Fallback: ambil kamera terakhir jika tidak ada label back
+            if (!backId && devices.length > 1) backId = devices[devices.length - 1].id;
+          }
+          if (backId) {
+            console.log('[Scanner] Strategi 1: Camera ID spesifik', backId);
+            await html5QrcodeScanner.start(backId, config, onScanSuccess, () => {});
+            started = true;
+          }
+        } catch (e1) {
+          console.warn('[Scanner] Strategi 1 gagal, coba facingMode:', e1);
+        }
+      }
+
+      // Strategi 2: Generic facingMode (fallback)
+      if (!started) {
+        console.log('[Scanner] Strategi 2: facingMode =', facingMode);
+        await html5QrcodeScanner.start({ facingMode }, config, onScanSuccess, () => {});
+      }
+
       isScanning = true;
       isPaused = false;
       updatePauseBtn();
       setStatus('', LANG.scanning, LANG.instruction);
       el('scan-overlay')?.classList.remove('hidden');
 
-      // Periksa dukungan flash setelah kamera aktif
+      // Tampilkan tombol flash segera setelah scanner aktif
+      // dan coba deteksi/simpan video track untuk flash
       setTimeout(() => {
         try {
           const video = document.querySelector('#reader video');
           const track = video?.srcObject?.getVideoTracks()[0];
           if (track) {
             activeVideoTrack = track;
-            const caps = track.getCapabilities ? track.getCapabilities() : {};
-            const torchSupported = !!caps.torch;
-            if (torchSupported && flashBtn) {
+            // Tampilkan flash button — user bisa mencoba; jika gagal akan ada notif
+            if (flashBtn) {
               flashBtn.hidden = false;
               flashBtn.removeAttribute('hidden');
               flashBtn.style.display = 'flex';
             }
           }
-        } catch (e) { console.warn('Flash capability check:', e); }
-      }, 800);
+        } catch (e) { console.warn('[Scanner] Flash init:', e); }
+      }, 600);
 
     } catch (err) {
-      console.warn('Camera error', err);
+      console.warn('[Scanner] Camera error', err);
       isScanning = false;
       html5QrcodeScanner = null;
       if (facingMode === 'environment') {
@@ -570,19 +597,68 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
 
   async function toggleFlash() {
     if (!isScanning) return;
-    // Pastikan kita punya referensi track yang valid
-    if (!activeVideoTrack || activeVideoTrack.readyState !== 'live') {
-      const video = document.querySelector('#reader video');
-      activeVideoTrack = video?.srcObject?.getVideoTracks()[0] || null;
+    const targetState = !isFlashOn;
+    let success = false;
+
+    // Metode 1: Gunakan helper library Html5Qrcode
+    if (html5QrcodeScanner) {
+      try {
+        await html5QrcodeScanner.applyVideoConstraints({ advanced: [{ torch: targetState }] });
+        success = true;
+        console.log('[Flash] Metode 1 (library) berhasil');
+      } catch (e) {
+        console.log('[Flash] Metode 1 gagal:', e);
+      }
     }
-    if (!activeVideoTrack) { console.warn('No video track for flash'); return; }
-    try {
-      isFlashOn = !isFlashOn;
-      await activeVideoTrack.applyConstraints({ advanced: [{ torch: isFlashOn }] });
+
+    // Metode 2: Native track torch (lebih kuat)
+    if (!success) {
+      try {
+        if (!activeVideoTrack || activeVideoTrack.readyState !== 'live') {
+          const video = document.querySelector('#reader video');
+          activeVideoTrack = video?.srcObject?.getVideoTracks()[0] || null;
+        }
+        if (activeVideoTrack) {
+          await activeVideoTrack.applyConstraints({ advanced: [{ torch: targetState }] });
+          success = true;
+          console.log('[Flash] Metode 2 (native torch) berhasil');
+        }
+      } catch (e) {
+        console.log('[Flash] Metode 2 gagal:', e);
+      }
+    }
+
+    // Metode 3: fillLightMode (fallback beberapa perangkat)
+    if (!success) {
+      try {
+        const video = document.querySelector('#reader video');
+        const track = video?.srcObject?.getVideoTracks()[0];
+        if (track) {
+          await track.applyConstraints({ advanced: [{ fillLightMode: targetState ? 'flash' : 'off' }] });
+          success = true;
+          console.log('[Flash] Metode 3 (fillLightMode) berhasil');
+        }
+      } catch (e) {
+        console.log('[Flash] Metode 3 gagal:', e);
+      }
+    }
+
+    if (success) {
+      isFlashOn = targetState;
       el('btn-flash')?.classList.toggle('active', isFlashOn);
-    } catch (e) {
-      console.warn('Flash toggle error:', e);
-      isFlashOn = !isFlashOn; // revert
+    } else {
+      // Semua metode gagal — beri tahu user
+      const flashBtn = el('btn-flash');
+      if (flashBtn) { flashBtn.hidden = true; flashBtn.style.display = 'none'; }
+      Swal.fire({
+        toast: true,
+        position: 'top',
+        icon: 'error',
+        title: 'Flash tidak didukung perangkat ini.',
+        showConfirmButton: false,
+        timer: 2000,
+      });
+      console.warn('[Flash] Semua metode gagal.');
     }
   }
 
@@ -951,13 +1027,21 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
   // saat navigasi PJAX berulang ke halaman ini.
   (async () => {
     renderHistory();
-    // Minta izin kamera lebih awal agar prompt muncul sebelum library berjalan
-    try {
-      const perm = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      perm.getTracks().forEach(t => t.stop());
-    } catch (e) {
-      console.warn('Camera permission request failed', e);
+
+    // Cek konteks aman (HTTPS/localhost) — kamera memerlukan secure context
+    if (!window.isSecureContext) {
+      Swal.fire({
+        title: 'Akses Kamera Dibatasi',
+        html: '<p class="text-sm">Browser memblokir akses kamera karena koneksi tidak aman (HTTP).</p><p class="text-sm font-bold mt-2">Gunakan HTTPS atau localhost.</p>',
+        icon: 'warning',
+        confirmButtonText: 'Saya Paham',
+        confirmButtonColor: '#6366f1',
+      });
+      return;
     }
+
+    // startCamera sudah menangani enumerasi device + fallback facingMode
+    // Tidak perlu pre-request getUserMedia terpisah (menghindari delay ganda)
     await startCamera('environment');
   })();
 
