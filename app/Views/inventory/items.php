@@ -532,11 +532,17 @@ function pageUrl($page, $search, $warehouse) {
           </div>
           <div style="flex:1">
             <input type="file" name="photo" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoFile(this)">
-            <button type="button" onclick="document.getElementById('photo-input').click()" class="btn-primary" style="padding:6px 10px;font-size:10px;border-radius:6px;width:auto;background:var(--surface);color:var(--text-muted);border:1px solid var(--border);gap:4px" title="Pilih foto atau ambil dari kamera">
-              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-              Pilih Foto
-            </button>
-            <p style="font-size:8px;color:var(--text-faint);margin-top:4px">Maksimal 2MB (JPG, PNG, GIF)</p>
+            <div style="display:flex; gap:6px;">
+              <button type="button" onclick="document.getElementById('photo-input').setAttribute('capture', 'environment'); document.getElementById('photo-input').click()" class="btn-primary" style="flex:1; padding:6px; font-size:10px; border-radius:6px; background:var(--surface); color:var(--text-muted); border:1px solid var(--border); gap:4px; justify-content:center" title="Buka Kamera">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Kamera
+              </button>
+              <button type="button" onclick="document.getElementById('photo-input').removeAttribute('capture'); document.getElementById('photo-input').click()" class="btn-primary" style="flex:1; padding:6px; font-size:10px; border-radius:6px; background:var(--surface); color:var(--text-muted); border:1px solid var(--border); gap:4px; justify-content:center" title="Pilih dari Galeri">
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                Galeri
+              </button>
+            </div>
+            <p style="font-size:8px;color:var(--text-faint);margin-top:4px">Maksimal 2MB (JPG, PNG)</p>
           </div>
         </div>
       </div>
