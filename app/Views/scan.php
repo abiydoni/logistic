@@ -440,7 +440,12 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
   function playScanSuccessSound() {
     try {
       if (!scanAudioCtx) scanAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (scanAudioCtx.state === 'suspended') scanAudioCtx.resume();
+      
+      // Jika suspended, resume() dulu lalu panggil ulang setelah aktif
+      if (scanAudioCtx.state === 'suspended') {
+        scanAudioCtx.resume().then(() => playScanSuccessSound());
+        return;
+      }
 
       const now = scanAudioCtx.currentTime;
 
