@@ -70,6 +70,7 @@ html.dark .scan-pause-btn:hover { background: rgba(255, 255, 255, 0.2); }
 .scan-frame-overlay {
   position: absolute; inset: 0; pointer-events: none;
   z-index: 10; display: flex; align-items: center; justify-content: center;
+  isolation: isolate; /* GPU layer tersendiri untuk laser, terpisah dari video */
 }
 .scan-frame-box { width: 70%; height: 60%; position: relative; display: block !important; }
 .scan-corner {
@@ -86,19 +87,26 @@ html.dark .scan-pause-btn:hover { background: rgba(255, 255, 255, 0.2); }
   top: 10%; height: 80%;
   left: 5%; right: 5%;
   pointer-events: none;
+  /* Isolasi layer agar compositing efisien */
+  contain: paint;
+  overflow: hidden;
 }
 .scan-laser {
   position: absolute;
   top: 0; left: 0; right: 0; height: 2px;
   background: linear-gradient(90deg, transparent 0%, #10b981 20%, #34d399 50%, #10b981 80%, transparent 100%);
-  box-shadow: 0 0 10px 3px rgba(16, 185, 129, 0.6);
+  box-shadow: 0 0 8px 2px rgba(16, 185, 129, 0.55);
+  /* GPU compositor animation — tidak terpengaruh JS main thread scanner */
+  will-change: transform;
   animation: scan-laser-anim 2s infinite ease-in-out;
-  will-change: top;
-  opacity: 0.9;
 }
+/*
+  Kalkulasi: viewport 400px × frame-box 60% = 240px × track 80% = 192px − 2px laser = 190px
+  Menggunakan transform (GPU compositor thread) bukan top (layout main thread)
+*/
 @keyframes scan-laser-anim {
-  0%, 100% { top: 0; }
-  50%       { top: calc(100% - 2px); }
+  0%, 100% { transform: translateY(0) translateZ(0); }
+  50%       { transform: translateY(190px) translateZ(0); }
 }
 .scan-toolbar { margin-top: 0; display: flex; justify-content: center; width: 100%; max-width: 500px; }
 .scan-tool-btn {
