@@ -121,7 +121,7 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
             <span><?= lang('App.warehouse') ?></span>
           </a>
-          <a href="<?= base_url('scan') ?>" class="sidebar-nav-item <?= uri_string() === 'scan' ? 'active' : '' ?>">
+          <a href="<?= base_url('scan') ?>" data-no-pjax="true" class="sidebar-nav-item <?= uri_string() === 'scan' ? 'active' : '' ?>">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-4v-4m-6 4h2m6 0v4m0-4h2m0 0v-4m-12 0h2M4 8V6a2 2 0 012-2h2m8 0h2a2 2 0 012 2v2m0 8v2a2 2 0 01-2 2h-2m-8 0H6a2 2 0 01-2-2v-2"></path></svg>
             <span><?= lang('App.scan') ?></span>
           </a>
@@ -212,7 +212,7 @@
       </a>
 
       <!-- Center FAB Scan -->
-      <a href="<?= base_url('scan') ?>" class="nav-fab">
+      <a href="<?= base_url('scan') ?>" data-no-pjax="true" class="nav-fab">
         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-4v-4m-6 4h2m6 0v4m0-4h2m0 0v-4m-12 0h2M4 8V6a2 2 0 012-2h2m8 0h2a2 2 0 012 2v2m0 8v2a2 2 0 01-2 2h-2m-8 0H6a2 2 0 01-2-2v-2"></path></svg>
       </a>
 

@@ -81,22 +81,24 @@ html.dark .scan-pause-btn:hover { background: rgba(255, 255, 255, 0.2); }
 .scan-corner.tr { top: 0; right: 0; border-top-width: 4px; border-right-width: 4px; border-top-right-radius: 12px; }
 .scan-corner.bl { bottom: 0; left: 0; border-bottom-width: 4px; border-left-width: 4px; border-bottom-left-radius: 12px; }
 .scan-corner.br { bottom: 0; right: 0; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 12px; }
+.scan-laser-track {
+  position: absolute;
+  top: 10%; height: 80%;
+  left: 5%; right: 5%;
+  pointer-events: none;
+}
 .scan-laser {
   position: absolute;
-  /* Posisi awal laser: 10% dari atas frame box */
-  top: 10%;
-  left: 5%; right: 5%; height: 2px;
-  background: #10b981; box-shadow: 0 0 15px 2px #10b981;
-  animation: scan-anim 2.5s infinite linear; opacity: 0.8;
-  /* GPU-accelerated: hindari layout reflow setiap frame */
-  will-change: transform;
-  transform: translateZ(0);
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #10b981 20%, #34d399 50%, #10b981 80%, transparent 100%);
+  box-shadow: 0 0 10px 3px rgba(16, 185, 129, 0.6);
+  animation: scan-laser-anim 2s infinite ease-in-out;
+  will-change: top;
+  opacity: 0.9;
 }
-/* Gunakan transform (GPU) bukan top (layout reflow) */
-@keyframes scan-anim {
-  0%   { transform: translateY(0%) translateZ(0); }
-  50%  { transform: translateY(800%) translateZ(0); }
-  100% { transform: translateY(0%) translateZ(0); }
+@keyframes scan-laser-anim {
+  0%, 100% { top: 0; }
+  50%       { top: calc(100% - 2px); }
 }
 .scan-toolbar { margin-top: 0; display: flex; justify-content: center; width: 100%; max-width: 500px; }
 .scan-tool-btn {
@@ -194,7 +196,10 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
         <div class="scan-corner tr"></div>
         <div class="scan-corner bl"></div>
         <div class="scan-corner br"></div>
-        <div class="scan-laser"></div>
+        <!-- Laser wrapper: top 10%-90% dari frame box, laser bergerak penuh di dalamnya -->
+        <div class="scan-laser-track">
+          <div class="scan-laser"></div>
+        </div>
       </div>
       <!-- Floating action buttons -->
       <div class="scan-floating-actions">
@@ -396,78 +401,70 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
   let lastCode = '';
   let lastCodeAt = 0;
   let processing = false;
-  let userInteracted = false;
   let activeVideoTrack = null; // referensi track untuk flash
 
   const el = (id) => document.getElementById(id);
 
-  /** Chrome requires a prior user gesture before navigator.vibrate / AudioContext */
+  /** Audio context untuk scan sound */
   let scanAudioCtx = null;
 
-  function getScanAudioContext() {
-    if (scanAudioCtx) return scanAudioCtx;
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return null;
-    scanAudioCtx = new Ctx();
-    return scanAudioCtx;
+  /** Prime (unlock) AudioContext saat user pertama interaksi — persis seperti jimpitan */
+  function primeAudio() {
+    if (!scanAudioCtx) scanAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (scanAudioCtx.state === 'suspended') scanAudioCtx.resume();
+    // Play silent pulse untuk unlock
+    const osc = scanAudioCtx.createOscillator();
+    const g = scanAudioCtx.createGain();
+    g.gain.setValueAtTime(0.001, scanAudioCtx.currentTime);
+    osc.connect(g); g.connect(scanAudioCtx.destination);
+    osc.start(); osc.stop(scanAudioCtx.currentTime + 0.1);
+    document.removeEventListener('click', primeAudio);
+    document.removeEventListener('touchstart', primeAudio);
   }
-
-  function unlockScanAudio() {
-    const ctx = getScanAudioContext();
-    if (ctx && ctx.state === 'suspended') {
-      ctx.resume().catch(function() {});
-    }
-  }
+  document.addEventListener('click', primeAudio);
+  document.addEventListener('touchstart', primeAudio);
 
   /**
-   * Suara sukses scan — dibuat dengan Web Audio API (offline, tanpa file MP3/WAV).
+   * Suara "Triangle" — 2 osilator sine, identik dengan implementasi jimpitan.
+   * Nada tinggi metalik yang beresonansi panjang.
    */
   function playScanSuccessSound() {
-    if (!userInteracted) return;
-    const ctx = getScanAudioContext();
-    if (!ctx) return;
     try {
-      if (ctx.state === 'suspended') {
-        ctx.resume().then(function() { playScanSuccessSound(); }).catch(function() {});
-        return;
-      }
-      const t0 = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      // Suara "Ting" yang jernih dan beresonansi seperti bel
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1200, t0); // Nada tinggi
-      osc.frequency.exponentialRampToValueAtTime(1100, t0 + 0.1); 
+      if (!scanAudioCtx) scanAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (scanAudioCtx.state === 'suspended') scanAudioCtx.resume();
 
-      gain.gain.setValueAtTime(0, t0);
-      gain.gain.linearRampToValueAtTime(0.7, t0 + 0.02); // Attack cepat
-      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 1.2); // Decay halus dan panjang
+      const now = scanAudioCtx.currentTime;
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(t0);
-      osc.stop(t0 + 1.2);
-    } catch (e) { /* autoplay policy or unsupported */ }
+      // Nada utama — tinggi & tajam
+      const osc1 = scanAudioCtx.createOscillator();
+      const gain1 = scanAudioCtx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(3500, now);
+      gain1.gain.setValueAtTime(0.5, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+      // Nada overtone metalik — karakteristik triangle
+      const osc2 = scanAudioCtx.createOscillator();
+      const gain2 = scanAudioCtx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(5200, now);
+      gain2.gain.setValueAtTime(0.3, now);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.0);
+
+      osc1.connect(gain1); gain1.connect(scanAudioCtx.destination);
+      osc2.connect(gain2); gain2.connect(scanAudioCtx.destination);
+
+      osc1.start(now); osc1.stop(now + 1.5);
+      osc2.start(now); osc2.stop(now + 1.0);
+    } catch (e) { console.warn('Sound error:', e); }
   }
 
   function safeVibrate(pattern) {
-    if (!userInteracted || !navigator.vibrate) return;
-    try {
-      navigator.vibrate(pattern);
-    } catch (e) { /* blocked or unsupported */ }
+    if (!navigator.vibrate) return;
+    try { navigator.vibrate(pattern); } catch (e) {}
   }
 
-  function markUserInteracted() {
-    userInteracted = true;
-    unlockScanAudio();
-  }
-
-  app.addEventListener('pointerdown', markUserInteracted, { once: true, passive: true });
-  app.addEventListener('keydown', markUserInteracted, { once: true });
-  app.addEventListener('touchstart', markUserInteracted, { once: true, passive: true });
-
-  const config = { fps: 12, aspectRatio: 1.333 };
+  const config = { fps: 15, aspectRatio: 1.333 };
 
   function setStatus(mode, title, sub) {
     const bar = el('scan-status');
