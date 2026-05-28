@@ -139,23 +139,27 @@ html.dark .scan-tool-btn:hover, html.dark .scan-tool-btn.active {
 }
 .scan-float-btn {
   width: 44px; height: 44px; border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px);
-  border: 1px solid rgba(0, 0, 0, 0.1); color: #0f172a;
+  background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15); color: #fff;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s;
-}
-.scan-float-btn:hover, .scan-float-btn.active {
-  background: rgba(99, 102, 241, 0.15); border-color: #6366f1; color: #4f46e5;
-}
-html.dark .scan-float-btn {
-  background: rgba(30, 41, 59, 0.7); border-color: rgba(255, 255, 255, 0.2);
-  color: #fff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-html.dark .scan-float-btn:hover, html.dark .scan-float-btn.active {
-  background: rgba(99, 102, 241, 0.8); border-color: #6366f1; color: #fff;
+  cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.25s ease;
 }
 .scan-float-btn svg { width: 20px; height: 20px; }
+/* Flash OFF — gelap/transparan */
+.scan-float-btn.flash-off {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.6);
+}
+/* Flash ON — kuning bersinar seperti senter nyala */
+.scan-float-btn.flash-on {
+  background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+  border: 2px solid #fef08a;
+  color: #1a0a00;
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.7), 0 4px 12px rgba(0,0,0,0.2);
+  transform: scale(1.08);
+}
 
 /* Simple History List */
 .scan-history-list { padding: 0; margin: 0; list-style: none; }
@@ -211,11 +215,8 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
       </div>
       <!-- Floating action buttons -->
       <div class="scan-floating-actions">
-        <button type="button" class="scan-float-btn" id="btn-flash" hidden title="<?= lang('App.toggle_flash') ?>">
+        <button type="button" class="scan-float-btn flash-off" id="btn-flash" hidden title="<?= lang('App.toggle_flash') ?>">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        </button>
-        <button type="button" class="scan-float-btn" id="btn-switch-cam" title="<?= lang('App.switch_camera') ?>">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
         </button>
       </div>
     </div>
@@ -519,9 +520,14 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
     activeVideoTrack = null;
     isFlashOn = false;
 
-    // Sembunyikan tombol flash saat memulai ulang
+    // Sembunyikan tombol flash saat memulai ulang, reset ke state OFF
     const flashBtn = el('btn-flash');
-    if (flashBtn) { flashBtn.hidden = true; flashBtn.style.display = 'none'; flashBtn.classList.remove('active'); }
+    if (flashBtn) {
+      flashBtn.hidden = true;
+      flashBtn.style.display = 'none';
+      flashBtn.classList.remove('flash-on');
+      flashBtn.classList.add('flash-off');
+    }
 
     try {
       const readerEl = el('reader');
@@ -661,7 +667,11 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
 
     if (success) {
       isFlashOn = targetState;
-      el('btn-flash')?.classList.toggle('active', isFlashOn);
+      const flashBtn = el('btn-flash');
+      if (flashBtn) {
+        flashBtn.classList.toggle('flash-on', isFlashOn);
+        flashBtn.classList.toggle('flash-off', !isFlashOn);
+      }
     } else {
       // Semua metode gagal — beri tahu user
       const flashBtn = el('btn-flash');
@@ -946,10 +956,6 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
   /* Events */
   el('btn-pause-scan')?.addEventListener('click', pauseScanner);
   el('btn-flash')?.addEventListener('click', toggleFlash);
-  el('btn-switch-cam')?.addEventListener('click', async () => {
-    facingMode = facingMode === 'environment' ? 'user' : 'environment';
-    await startCamera(facingMode);
-  });
   el('btn-toggle-manual')?.addEventListener('click', () => {
     el('manual-panel')?.classList.toggle('hidden');
     el('btn-toggle-manual')?.classList.toggle('active');
