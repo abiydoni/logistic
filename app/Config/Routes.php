@@ -16,6 +16,8 @@ $routes->get('dashboard', 'Dashboard::index');
 $routes->match(['GET', 'POST'], 'inventory/warehouses', 'Inventory::warehouses');
 $routes->match(['GET', 'POST'], 'inventory/items', 'Inventory::items');
 $routes->get('inventory/bincard/(:num)', 'Inventory::bincard/$1');
+$routes->get('inventory/batches/(:num)', 'Inventory::getBatches/$1');
+$routes->post('inventory/updateBatch', 'Inventory::updateBatchDate');
 $routes->post('inventory/mutate', 'Inventory::mutate');
 $routes->post('inventory/items/toggle-status', 'Inventory::toggleItemStatus');
 $routes->get('scan', 'Scan::index');

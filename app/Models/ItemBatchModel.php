@@ -29,7 +29,7 @@ class ItemBatchModel extends AppModel
         // Custom order to put NULL expired_date last
         return $this->where('item_id', $itemId)
             ->where('stock >', 0)
-            ->orderBy('CASE WHEN expired_date IS NULL THEN 1 ELSE 0 END', 'ASC')
+            ->orderBy('CASE WHEN expired_date IS NULL THEN 1 ELSE 0 END', 'ASC', false)
             ->orderBy('expired_date', 'ASC')
             ->orderBy('id', 'ASC')
             ->findAll();

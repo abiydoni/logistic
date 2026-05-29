@@ -70,12 +70,15 @@ class ItemModel extends AppModel
         $warningDate = date('Y-m-d', strtotime('+30 days'));
 
         return $this->db->table($this->table)
-            ->select('items.*, warehouses.name as warehouse_name, warehouses.requires_expiration')
+            ->select('items.*, warehouses.name as warehouse_name, MIN(item_batches.expired_date) as earliest_expired')
             ->join('warehouses', 'warehouses.id = items.warehouse_id', 'left')
+            ->join('item_batches', 'item_batches.item_id = items.id', 'inner')
             ->where('items.is_active', 1)
-            ->where('expired_date IS NOT NULL')
-            ->where('expired_date <=', $warningDate)
-            ->orderBy('expired_date', 'ASC')
+            ->where('item_batches.stock >', 0)
+            ->where('item_batches.expired_date IS NOT NULL')
+            ->where('item_batches.expired_date <=', $warningDate)
+            ->groupBy('items.id')
+            ->orderBy('earliest_expired', 'ASC')
             ->get()->getResultArray();
     }
 }

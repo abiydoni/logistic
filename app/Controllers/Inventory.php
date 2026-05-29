@@ -320,7 +320,89 @@ class Inventory extends BaseController
     }
 
     /**
-     * Get item details and complete transaction history for stock/bincard visualization.
+     * Get active batches for an item (JSON endpoint)
+     */
+    public function getBatches($itemId)
+    {
+        $batches = $this->batchModel->getBatchesForFefo($itemId);
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data' => $batches
+        ]);
+    }
+
+    /**
+     * Update expired date for a specific batch (JSON endpoint)
+     */
+    public function updateBatchDate()
+    {
+        if (!$this->request->is('post')) return;
+
+        $batchId = $this->request->getPost('batch_id');
+        $expiredDate = $this->request->getPost('expired_date');
+        $qty = (int) $this->request->getPost('qty');
+        
+        if (empty($expiredDate)) {
+            $expiredDate = null;
+        }
+
+        $batch = $this->batchModel->find($batchId);
+        if (!$batch) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Batch tidak ditemukan!']);
+        }
+
+        if ($qty <= 0) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Jumlah stok tidak valid!']);
+        }
+
+        // Limit qty to the maximum stock in the batch
+        if ($qty > $batch['stock']) {
+            $qty = $batch['stock'];
+        }
+
+        // Check if there is already another batch with the EXACT same item and new expired_date
+        $existingBatch = $this->batchModel->where('item_id', $batch['item_id'])
+                                          ->where('expired_date', $expiredDate)
+                                          ->where('id !=', $batchId) // exclude self
+                                          ->first();
+
+        // 1. Modifying the FULL stock of this batch
+        if ($qty == $batch['stock']) {
+            if ($existingBatch) {
+                // Merge into existing batch and delete this one
+                $this->batchModel->update($existingBatch['id'], ['stock' => $existingBatch['stock'] + $batch['stock']]);
+                $this->batchModel->delete($batchId);
+            } else {
+                // Just update this batch's date
+                $this->batchModel->update($batchId, ['expired_date' => $expiredDate]);
+            }
+        } 
+        // 2. Modifying PARTIAL stock (Splitting the batch)
+        else {
+            // Deduct qty from current batch
+            $this->batchModel->update($batchId, ['stock' => $batch['stock'] - $qty]);
+
+            if ($existingBatch) {
+                // Add qty to existing batch
+                $this->batchModel->update($existingBatch['id'], ['stock' => $existingBatch['stock'] + $qty]);
+            } else {
+                // Create a new batch
+                $this->batchModel->insert([
+                    'item_id' => $batch['item_id'],
+                    'expired_date' => $expiredDate,
+                    'stock' => $qty
+                ]);
+            }
+        }
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'message' => 'Tanggal kedaluwarsa berhasil diperbarui!'
+        ]);
+    }
+
+    /**
+     * Item History (Bincard)
      *
      * @param int|string $itemId
      */

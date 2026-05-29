@@ -18,6 +18,7 @@
 
 <style>
 .swal-rounded { border-radius: 12px !important; }
+.swal2-container { z-index: 9999 !important; }
 
 /* ── Responsive Card & Table Styles ── */
 .items-container {
@@ -587,6 +588,26 @@ function pageUrl($page, $search, $warehouse) {
         </div>
       </div>
 
+      <!-- Batch Management Group -->
+      <div id="batch-management-group" style="display:none;margin-top:8px;">
+        <label style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:4px">Stok & Kedaluwarsa (Per Batch)</label>
+        <div style="background:var(--surface-2);border-radius:8px;border:1px solid var(--border);overflow:hidden;">
+          <table style="width:100%;border-collapse:collapse;font-size:11px;text-align:left;">
+            <thead style="background:var(--surface);border-bottom:1px solid var(--border);">
+              <tr>
+                <th style="padding:6px 8px;font-weight:700;color:var(--text-muted);width:30px;text-align:center">#</th>
+                <th style="padding:6px 8px;font-weight:700;color:var(--text-muted);">Stok</th>
+                <th style="padding:6px 8px;font-weight:700;color:var(--text-muted);">Tgl Kedaluwarsa</th>
+                <th style="padding:6px 8px;font-weight:700;color:var(--text-muted);text-align:right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="batch-list-body">
+              <tr><td colspan="4" style="text-align:center;padding:12px;color:var(--text-faint);">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div>
         <label style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px"><?= lang('App.status') ?></label>
         <div class="grid grid-cols-2 gap-2">
@@ -952,7 +973,10 @@ function pageUrl($page, $search, $warehouse) {
     const req = sel?.options[sel.selectedIndex]?.getAttribute('data-requires-expiration') === '1';
     const grp = document.getElementById('expired-date-group');
     const inp = document.getElementById('expired_date');
-    if (grp) grp.style.display = req ? '' : 'none';
+    const isEditing = !!document.getElementById('item-id').value;
+    
+    // Only show expiration date field when adding a new item, not when editing
+    if (grp) grp.style.display = (req && !isEditing) ? '' : 'none';
     if (!req && inp) inp.value = '';
   }
   document.getElementById('warehouse_id')?.addEventListener('change', updateExpirationFieldVisibility);
@@ -1005,6 +1029,9 @@ function pageUrl($page, $search, $warehouse) {
       const fileInput = document.getElementById('photo-input');
       if (fileInput) fileInput.value = '';
 
+      const batchGroup = document.getElementById('batch-management-group');
+      if (batchGroup) batchGroup.style.display = 'none';
+
       c.style.display = 'flex';
     }
   }
@@ -1022,6 +1049,11 @@ function pageUrl($page, $search, $warehouse) {
     document.getElementById('min_stock').value       = item.min_stock;
     document.getElementById('expired_date').value    = item.expired_date || '';
     document.getElementById('initial-stock-group').style.display = 'none';
+    
+    // Hide expired date group on edit because expiration dates belong to stock batches, not the item itself
+    const expiredGroup = document.getElementById('expired-date-group');
+    if (expiredGroup) expiredGroup.style.display = 'none';
+
     document.getElementById('form-title').innerText  = '<?= lang('App.edit_item') ?>';
     updateItemStatusSelector(item.is_active !== undefined ? item.is_active : 1);
     updateExpirationFieldVisibility();
@@ -1047,6 +1079,104 @@ function pageUrl($page, $search, $warehouse) {
     }
 
     document.getElementById('item-form-container').style.display = 'flex';
+    
+    // Load batches
+    fetchBatches(item.id, item.unit);
+  }
+
+  /* ✨ Fetch and Render Batches ✨ */
+  async function fetchBatches(itemId, unit) {
+    const batchGroup = document.getElementById('batch-management-group');
+    const tbody = document.getElementById('batch-list-body');
+    if (!batchGroup || !tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:12px;color:var(--text-faint);">Memuat data...</td></tr>';
+    
+    try {
+      const res = await fetch(`<?= base_url('inventory/batches') ?>/${itemId}`);
+      const result = await res.json();
+      
+      if (result.status === 'success' && result.data && result.data.length > 0) {
+        batchGroup.style.display = 'block';
+        tbody.innerHTML = '';
+        result.data.forEach((batch, index) => {
+          const expText = batch.expired_date ? batch.expired_date : '<span style="color:var(--text-faint);font-style:italic">Tidak diatur</span>';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;color:var(--text-faint)">${index + 1}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid var(--border);font-weight:700">${batch.stock} <span style="font-size:9px;font-weight:400;color:var(--text-muted)">${unit}</span></td>
+            <td style="padding:6px 8px;border-bottom:1px solid var(--border);">${expText}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:right">
+              <button type="button" onclick="editBatchDate(${batch.id}, '${batch.expired_date || ''}', ${batch.stock}, ${itemId}, '${unit}')" class="btn-primary" style="padding:4px 8px;font-size:9px;border-radius:4px;background:rgba(99,102,241,.1);color:#6366f1;border:none">Ubah Tgl</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        batchGroup.style.display = 'none';
+      }
+    } catch (e) {
+      console.error(e);
+      batchGroup.style.display = 'block';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:12px;color:#ef4444;">Gagal memuat batch.</td></tr>';
+    }
+  }
+
+  /* ✨ Edit Batch Date & Split ✨ */
+  async function editBatchDate(batchId, currentDate, maxStock, itemId, unit) {
+    const dk = document.documentElement.classList.contains('dark');
+    const bg = dk ? '#1e293b' : '#ffffff';
+    const fg = dk ? '#f1f5f9' : '#111827';
+    const border = dk ? '#334155' : '#e2e8f0';
+    const bg2 = dk ? '#0f172a' : '#f8fafc';
+
+    const { value: formValues, isConfirmed } = await Swal.fire({
+      title: '<span style="font-size:14px;font-weight:800;color:'+fg+'">Ubah Tanggal Kedaluwarsa</span>',
+      html: `
+        <div style="text-align:left;margin-top:10px;">
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px;display:block">Tanggal Kedaluwarsa Baru</label>
+          <input type="date" id="swal-batch-exp" value="${currentDate}" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid ${border};background:${bg2};color:${fg};font-family:'Outfit',sans-serif">
+          
+          <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-top:12px;margin-bottom:6px;display:block">Jumlah Stok yang Diubah (Max: ${maxStock})</label>
+          <input type="number" id="swal-batch-qty" value="${maxStock}" min="1" max="${maxStock}" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid ${border};background:${bg2};color:${fg};font-family:'Outfit',sans-serif">
+          
+          <p style="font-size:10px;color:var(--text-faint);margin-top:8px;line-height:1.4">Jika jumlah stok lebih kecil dari total batch, sistem akan otomatis <b>memecah batch</b> ini menjadi dua.</p>
+        </div>
+      `,
+      background: bg,
+      showCancelButton: true,
+      confirmButtonColor: '#6366f1',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Simpan',
+      cancelButtonText: 'Batal',
+      customClass: { popup: 'swal-rounded' },
+      preConfirm: () => {
+        return {
+          newDate: document.getElementById('swal-batch-exp').value,
+          qty: document.getElementById('swal-batch-qty').value
+        };
+      }
+    });
+
+    if (isConfirmed && formValues) {
+      const body = new FormData();
+      body.append('batch_id', batchId);
+      body.append('expired_date', formValues.newDate);
+      body.append('qty', formValues.qty);
+
+      try {
+        const res = await fetch('<?= base_url('inventory/updateBatch') ?>', { method: 'POST', body });
+        const result = await res.json();
+        if (result.status === 'success') {
+          Swal.fire({ icon: 'success', title: 'Berhasil', text: result.message, timer: 1500, showConfirmButton: false, background: bg, color: fg });
+          fetchBatches(itemId, unit); // Reload table
+        } else {
+          Swal.fire({ icon: 'error', title: 'Gagal', text: result.message, background: bg, color: fg });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }
 
   /* ── Shared Photo Preview Handler ── */
