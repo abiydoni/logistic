@@ -306,13 +306,30 @@
 /* ── Mobile Layout Fixes ── */
 @media (max-width: 640px) {
   .table-header-grid {
-    grid-template-columns: 24px 18px 1fr 50px 40px 96px;
-    padding: 6px 4px;
+    grid-template-columns: 24px 18px 1fr 50px 45px;
+    padding: 8px 6px;
+  }
+  .action-header-mobile {
+    display: none !important;
   }
   .item-card-row {
-    grid-template-columns: 24px 18px 1fr 50px 40px 96px;
-    padding: 6px 4px;
-    gap: 2px;
+    grid-template-columns: 24px 18px 1fr 50px 45px;
+    padding: 10px 6px 8px;
+    gap: 6px 4px;
+    align-items: center;
+  }
+  .col-actions {
+    display: none;
+    grid-column: 1 / -1;
+    width: 100%;
+    border-top: 1px dashed var(--border);
+    padding-top: 10px;
+    margin-top: 4px;
+    justify-content: center;
+    gap: 6px;
+  }
+  .col-actions.show-actions {
+    display: flex;
   }
   .col-index { font-size: 9px; }
   .item-name-txt { font-size: 11px; }
@@ -325,7 +342,6 @@
       width: 28px;
       height: 28px;
     }
-    .col-actions { gap: 4px; }
 }
 
 /* ── Desktop Layout Fixes (Detailed Table) ── */
@@ -642,7 +658,7 @@ function pageUrl($page, $search, $warehouse) {
       <span class="desktop-only"><?= lang('App.warehouse') ?></span>
       <span style="text-align:center">Exp</span>
       <span style="text-align:center"><?= lang('App.stock') ?></span>
-      <span style="text-align:center"><?= lang('App.action') ?></span>
+      <span style="text-align:center" class="action-header-mobile"><?= lang('App.action') ?></span>
     </div>
 
     <!-- Rows -->
@@ -664,7 +680,8 @@ function pageUrl($page, $search, $warehouse) {
       elseif ($isSoonExp || $isLowStock) $rowBg = 'rgba(245,158,11,.12)';
     ?>
     <div class="item-card-row<?= $isActive ? '' : ' is-inactive' ?>"
-         style="background:<?= $rowBg ?>;">
+         style="background:<?= $rowBg ?>;"
+         onclick="toggleMobileActions(this)">
 
       <!-- Checkbox -->
       <div style="display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation()">
@@ -681,7 +698,7 @@ function pageUrl($page, $search, $warehouse) {
         <!-- Photo Thumbnail -->
         <div style="flex-shrink:0; display:flex; align-items:center;">
           <?php if (!empty($item['photo'])): ?>
-            <img src="<?= base_url('uploads/items/' . $item['photo']) ?>" alt="<?= esc($item['name']) ?>" style="width:36px; height:36px; border-radius:8px; object-fit:cover; border:1.5px solid var(--border); box-shadow:0 1px 2px rgba(0,0,0,0.05); cursor:pointer" onclick="Swal.fire({imageUrl: this.src, imageAlt: this.alt, showConfirmButton: false, width: 'auto', padding: '1em', background: 'transparent', backdrop: 'rgba(15,23,42,0.8)', customClass: {popup: 'transparent-swal'}})">
+            <img src="<?= base_url('uploads/items/' . $item['photo']) ?>" alt="<?= esc($item['name']) ?>" style="width:36px; height:36px; border-radius:8px; object-fit:cover; border:1.5px solid var(--border); box-shadow:0 1px 2px rgba(0,0,0,0.05); cursor:pointer" onclick="event.stopPropagation(); Swal.fire({imageUrl: this.src, imageAlt: this.alt, showConfirmButton: false, width: 'auto', padding: '1em', background: 'transparent', backdrop: 'rgba(15,23,42,0.8)', customClass: {popup: 'transparent-swal'}})">
           <?php else: ?>
             <div style="width:36px; height:36px; border-radius:8px; background:linear-gradient(135deg, var(--surface-2), var(--surface-3, var(--border))); border:1.5px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-weight:bold; font-size:10px;">
               <?= strtoupper(substr(esc($item['name']), 0, 2)) ?>
@@ -692,7 +709,7 @@ function pageUrl($page, $search, $warehouse) {
         <!-- Details Text -->
         <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
           <div class="item-title-row">
-            <a href="javascript:void(0)" class="item-name-txt" onclick="showBinCard(<?= $item['id'] ?>)" style="text-decoration:none; color:inherit; display:inline-block; transition:color 0.2s;" onmouseover="this.style.color='#6366f1'" onmouseout="this.style.color='inherit'" title="Lihat Kartu Stok (Bincard)"><?= esc($item['name']) ?></a>
+            <a href="javascript:void(0)" class="item-name-txt" onclick="event.stopPropagation(); showBinCard(<?= $item['id'] ?>)" style="text-decoration:none; color:inherit; display:inline-block; transition:color 0.2s;" onmouseover="this.style.color='#6366f1'" onmouseout="this.style.color='inherit'" title="Lihat Kartu Stok (Bincard)"><?= esc($item['name']) ?></a>
             <div class="badges-row">
               <?php if (! $isActive): ?>
                 <span class="badge badge-rose"><?= lang('App.status_inactive') ?></span>
@@ -1034,6 +1051,14 @@ function pageUrl($page, $search, $warehouse) {
     document.getElementById('code').value = prefix + timestamp + random;
   }
 
+  /* ✨ Toggle Mobile Actions ✨ */
+  function toggleMobileActions(row) {
+    if (window.innerWidth <= 640) {
+      const actions = row.querySelector('.col-actions');
+      if (actions) actions.classList.toggle('show-actions');
+    }
+  }
+
   document.getElementById('item-form-container').addEventListener('click', function(e) {
     if (e.target === this) toggleForm();
   });
@@ -1158,6 +1183,7 @@ function pageUrl($page, $search, $warehouse) {
     });
 
     if (isConfirmed && formValues) {
+      Swal.fire({ title: 'Memproses...', allowOutsideClick: false, background: bg, color: fg, didOpen: () => Swal.showLoading() });
       const body = new FormData();
       body.append('batch_id', batchId);
       body.append('expired_date', formValues.newDate);
@@ -1178,25 +1204,87 @@ function pageUrl($page, $search, $warehouse) {
     }
   }
 
-  /* ── Shared Photo Preview Handler ── */
-  function handlePhotoFile(input) {
+  /* ✨ Shared Photo Preview Handler with Compression ✨ */
+  async function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            if (!blob) return reject(new Error('Canvas to Blob failed'));
+            let fileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+            const compressedFile = new File([blob], fileName, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            resolve(compressedFile);
+          }, 'image/jpeg', quality);
+        };
+        img.onerror = reject;
+        img.src = event.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handlePhotoFile(input) {
     const file = input.files[0];
     if (!file) return;
     const previewImg   = document.getElementById('photo-preview-img');
     const placeholder  = document.getElementById('photo-preview-placeholder');
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      if (previewImg) { previewImg.src = e.target.result; previewImg.style.display = 'block'; }
-      if (placeholder) placeholder.style.display = 'none';
-    };
-    reader.readAsDataURL(file);
-    // If triggered from camera input, transfer file to the named photo-input so form submits it
-    if (input.id === 'photo-camera-input') {
+    
+    const originalHtml = placeholder ? placeholder.innerHTML : '';
+    if (placeholder) placeholder.innerHTML = '<span style="font-size:10px;color:var(--text-faint)">Memproses...</span>';
+
+    try {
+      const compressedFile = await compressImage(file, 800, 800, 0.7);
+      
       try {
         const dt = new DataTransfer();
-        dt.items.add(file);
+        dt.items.add(compressedFile);
         document.getElementById('photo-input').files = dt.files;
-      } catch(e) { /* DataTransfer not supported – file still previews but won't upload on older browsers */ }
+      } catch(e) {
+        console.warn("DataTransfer not supported", e);
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        if (previewImg) { previewImg.src = e.target.result; previewImg.style.display = 'block'; }
+        if (placeholder) { placeholder.style.display = 'none'; placeholder.innerHTML = originalHtml; }
+      };
+      reader.readAsDataURL(compressedFile);
+
+    } catch (err) {
+      console.error('Image compression failed', err);
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        if (previewImg) { previewImg.src = e.target.result; previewImg.style.display = 'block'; }
+        if (placeholder) { placeholder.style.display = 'none'; placeholder.innerHTML = originalHtml; }
+      };
+      reader.readAsDataURL(file);
     }
   }
 
@@ -1218,6 +1306,9 @@ function pageUrl($page, $search, $warehouse) {
       color: fg
     });
     if (!confirm.isConfirmed) return;
+
+    Swal.fire({ title: 'Memproses...', allowOutsideClick: false, background: bg, color: fg, didOpen: () => Swal.showLoading() });
+
     try {
       const body = new FormData();
       body.append('id', id);
@@ -1346,6 +1437,8 @@ function pageUrl($page, $search, $warehouse) {
       return;
     }
 
+    Swal.fire({ title: 'Memproses...', allowOutsideClick: false, background: bg, color: fg, didOpen: () => Swal.showLoading() });
+
     const body = new FormData();
     body.append('item_id', item.id);
     body.append('type', fv.type);
@@ -1390,6 +1483,9 @@ function pageUrl($page, $search, $warehouse) {
     const dk = document.documentElement.classList.contains('dark');
     const bg = dk ? '#1e293b' : '#ffffff';
     const fg = dk ? '#f1f5f9' : '#111827';
+    
+    Swal.fire({ title: 'Menyimpan Data...', text: 'Mohon tunggu sebentar', allowOutsideClick: false, background: bg, color: fg, didOpen: () => Swal.showLoading() });
+
     try {
       const res    = await fetch(this.action, { method:'POST', body: new FormData(this) });
       const result = await res.json();

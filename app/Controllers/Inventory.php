@@ -124,7 +124,14 @@ class Inventory extends BaseController
 
             // Handle image upload
             $photoFile = $this->request->getFile('photo');
-            if ($photoFile && $photoFile->isValid() && ! $photoFile->hasMoved()) {
+            if ($photoFile && $photoFile->getError() !== UPLOAD_ERR_NO_FILE) {
+                if (! $photoFile->isValid()) {
+                    return $this->response->setJSON([
+                        'status'  => 'error',
+                        'message' => 'Gagal mengunggah foto: ' . $photoFile->getErrorString(),
+                    ]);
+                }
+
                 $validationRule = [
                     'photo' => [
                         'label' => 'Photo',
@@ -135,7 +142,7 @@ class Inventory extends BaseController
                 if (! $this->validate($validationRule)) {
                     return $this->response->setJSON([
                         'status'  => 'error',
-                        'message' => 'Format file tidak valid atau ukuran file melebihi 2MB! Pastikan mengunggah file gambar (JPG/PNG/GIF).',
+                        'message' => 'Format file tidak valid atau ukuran melebihi 2MB! Pastikan gambar berformat JPG/PNG/GIF.',
                     ]);
                 }
 
@@ -150,15 +157,22 @@ class Inventory extends BaseController
                     }
                 }
 
-                // Create folder if not exists
-                $uploadPath = FCPATH . 'uploads/items';
-                if (! is_dir($uploadPath)) {
-                    mkdir($uploadPath, 0755, true);
-                }
+                // Move new photo with exception handling
+                try {
+                    $uploadPath = FCPATH . 'uploads/items';
+                    if (! is_dir($uploadPath)) {
+                        mkdir($uploadPath, 0777, true);
+                    }
 
-                $newPhotoName = $photoFile->getRandomName();
-                $photoFile->move($uploadPath, $newPhotoName);
-                $data['photo'] = $newPhotoName;
+                    $newPhotoName = $photoFile->getRandomName();
+                    $photoFile->move($uploadPath, $newPhotoName);
+                    $data['photo'] = $newPhotoName;
+                } catch (\Exception $e) {
+                    return $this->response->setJSON([
+                        'status'  => 'error',
+                        'message' => 'Gagal menyimpan gambar di server (Masalah Izin Folder): ' . $e->getMessage()
+                    ]);
+                }
             }
 
             if ($id) {
