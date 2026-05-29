@@ -60,11 +60,15 @@ class Inventory extends BaseController
      */
     public function items()
     {
-        if ($this->request->is('post')) {
-            $id = $this->request->getPost('id');
+        $isDelete = $this->request->is('delete') || $this->request->getPost('_method') === 'DELETE';
+        
+        if ($this->request->is('post') || $isDelete) {
+            $id = $this->request->getMethod() === 'DELETE' 
+                ? $this->request->getVar('id') 
+                : $this->request->getPost('id');
             
             // Delete operation
-            if ($this->request->getPost('_method') === 'DELETE') {
+            if ($isDelete) {
                 $sessionRole   = session()->get('role');
                 $sessionUserId = session()->get('user_id');
 
@@ -72,7 +76,7 @@ class Inventory extends BaseController
                     return $this->response->setJSON(['status' => 'error', 'message' => 'Hanya Admin yang dapat menghapus barang! [role=' . $sessionRole . ']']);
                 }
 
-                $password = $this->request->getPost('password');
+                $password = $this->request->getVar('password');
                 $userModel = new \App\Models\UserModel();
                 $user = $userModel->find($sessionUserId);
 

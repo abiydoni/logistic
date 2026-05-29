@@ -1606,18 +1606,19 @@ function pageUrl($page, $search, $warehouse) {
       body.append('_method', 'DELETE');
       const res = await fetch('<?= base_url('inventory/items') ?>', { method: 'POST', body });
       const rawText = await res.text();
+      console.log('[DELETE] HTTP Status:', res.status, '| Body:', rawText);
       let data;
       try {
         data = JSON.parse(rawText);
       } catch(parseErr) {
-        Swal.fire({ icon: 'error', title: 'Server Error', html: `<pre style="font-size:10px;text-align:left;white-space:pre-wrap;max-height:200px;overflow:auto">${rawText.substring(0,500)}</pre>`, confirmButtonColor: '#6366f1', background: bg, color: fg });
+        Swal.fire({ icon: 'error', title: 'Server Error (bukan JSON)', html: `<pre style="font-size:10px;text-align:left;white-space:pre-wrap;max-height:200px;overflow:auto">${rawText.substring(0,600)}</pre>`, confirmButtonColor: '#6366f1', background: bg, color: fg });
         return;
       }
       if (data.status === 'success') {
         Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Barang berhasil dihapus.', timer: 1200, showConfirmButton: false, background: bg, color: fg })
              .then(() => location.reload());
       } else {
-        Swal.fire({ icon: 'error', title: 'Gagal', text: data.message, confirmButtonColor: '#6366f1', background: bg, color: fg });
+        Swal.fire({ icon: 'error', title: 'Gagal', html: `<b>${data.message || '(pesan kosong)'}</b><br><small style="color:#94a3b8">RAW: ${JSON.stringify(data)}</small>`, confirmButtonColor: '#6366f1', background: bg, color: fg });
       }
     } catch(e) {
       Swal.fire({ icon: 'error', title: 'Network Error', text: e.message, confirmButtonColor: '#6366f1', background: bg, color: fg });

@@ -14,7 +14,7 @@ $routes->get('auth/logout', 'Auth::logout');
 
 $routes->get('dashboard', 'Dashboard::index');
 $routes->match(['GET', 'POST'], 'inventory/warehouses', 'Inventory::warehouses');
-$routes->match(['GET', 'POST'], 'inventory/items', 'Inventory::items');
+$routes->match(['GET', 'POST', 'DELETE'], 'inventory/items', 'Inventory::items');
 $routes->get('inventory/bincard/(:num)', 'Inventory::bincard/$1');
 $routes->get('inventory/batches/(:num)', 'Inventory::getBatches/$1');
 $routes->post('inventory/updateBatch', 'Inventory::updateBatchDate');
