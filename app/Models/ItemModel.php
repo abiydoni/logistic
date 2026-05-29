@@ -38,14 +38,14 @@ class ItemModel extends AppModel
     public function getWithWarehouse($id = null)
     {
         $builder = $this->db->table($this->table)
-            ->select('items.*, warehouses.name as warehouse_name')
+            ->select('items.*, warehouses.name as warehouse_name, warehouses.requires_expiration')
             ->join('warehouses', 'warehouses.id = items.warehouse_id', 'left');
 
         if ($id !== null) {
             return $builder->where('items.id', $id)->get()->getRowArray();
         }
 
-        return $builder->get()->getResultArray();
+        return $builder->orderBy('items.name', 'ASC')->get()->getResultArray();
     }
 
     /**
@@ -54,7 +54,7 @@ class ItemModel extends AppModel
     public function getLowStock()
     {
         return $this->db->table($this->table)
-            ->select('items.*, warehouses.name as warehouse_name')
+            ->select('items.*, warehouses.name as warehouse_name, warehouses.requires_expiration')
             ->join('warehouses', 'warehouses.id = items.warehouse_id', 'left')
             ->where('items.is_active', 1)
             ->where('current_stock <= min_stock')
@@ -70,7 +70,7 @@ class ItemModel extends AppModel
         $warningDate = date('Y-m-d', strtotime('+30 days'));
 
         return $this->db->table($this->table)
-            ->select('items.*, warehouses.name as warehouse_name')
+            ->select('items.*, warehouses.name as warehouse_name, warehouses.requires_expiration')
             ->join('warehouses', 'warehouses.id = items.warehouse_id', 'left')
             ->where('items.is_active', 1)
             ->where('expired_date IS NOT NULL')

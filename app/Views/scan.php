@@ -917,6 +917,11 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
     lastCode = trimmed;
     lastCodeAt = now;
     processing = true;
+    
+    // Suara dimainkan persis saat barcode terbaca oleh kamera
+    if (!fromHistory) {
+      playScanSuccessSound();
+    }
 
     setStatus('', LANG.scanning, trimmed);
 
@@ -935,7 +940,6 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
           ok: true,
         });
         safeVibrate(80);
-        playScanSuccessSound();
       } else {
         showNotFound(data.message || LANG.notFound, trimmed);
         pushHistory({
@@ -986,6 +990,14 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
       return;
     }
 
+    if (mutateType === 'in') {
+      const requiresExp = parseInt(currentItem.requires_expiration, 10) === 1;
+      if (requiresExp && !expired) {
+        swalScan({ icon: 'warning', title: 'Wajib Diisi', text: 'Untuk barang di gudang makanan/minuman ini, Tanggal Kedaluwarsa WAJIB diisi saat Mutasi Masuk!' });
+        return;
+      }
+    }
+
     const typeLabel = mutateType === 'in' ? LANG.stockIn : LANG.stockOut;
     const typeColor = mutateType === 'in' ? '#059669' : '#dc2626';
     const html = LANG.confirmMutateHtml
@@ -1033,7 +1045,6 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
 
       if (data.status === 'success') {
         safeVibrate([50, 30, 50]);
-        playScanSuccessSound();
         await resumeScanning();
         swalScan({
           icon: 'success',

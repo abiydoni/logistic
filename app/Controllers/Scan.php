@@ -23,7 +23,7 @@ class Scan extends BaseController
         $itemModel = new ItemModel();
 
         // Query item joined with warehouse
-        $item = $itemModel->select('items.*, warehouses.name as warehouse_name')
+        $item = $itemModel->select('items.*, warehouses.name as warehouse_name, warehouses.requires_expiration')
             ->join('warehouses', 'warehouses.id = items.warehouse_id', 'left')
             ->where('items.code', $code)
             ->first();

@@ -184,7 +184,7 @@ class Inventory extends BaseController
         $offset          = ($currentPage - 1) * $perPage;
 
         $query = $this->itemModel
-            ->select('items.*, warehouses.name as warehouse_name')
+            ->select('items.*, warehouses.name as warehouse_name, warehouses.requires_expiration')
             ->join('warehouses', 'warehouses.id = items.warehouse_id', 'left');
 
         if (!empty($warehouseFilter)) {

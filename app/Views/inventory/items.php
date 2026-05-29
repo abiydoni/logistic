@@ -1231,6 +1231,21 @@ function pageUrl($page, $search, $warehouse) {
   /* ── Add/Edit form submit ── */
   document.getElementById('item-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+
+    const expVal = document.getElementById('expired_date').value;
+    const initialStockVal = parseInt(document.getElementById('initial_stock').value, 10) || 0;
+    const isEditing = !!document.getElementById('item-id').value;
+
+    const whSelect = document.getElementById('warehouse_id');
+    const selectedOption = whSelect.options[whSelect.selectedIndex];
+    const requiresExp = parseInt(selectedOption.getAttribute('data-requires-expiration'), 10) === 1;
+
+    // Saat edit, atau saat tambah barang dengan stok awal > 0
+    if (requiresExp && !expVal && (isEditing || initialStockVal > 0)) {
+      Swal.fire({ icon: 'warning', title: 'Wajib Diisi', text: 'Untuk barang di gudang ini, Tanggal Kedaluwarsa WAJIB diisi!' });
+      return;
+    }
+
     const dk = document.documentElement.classList.contains('dark');
     const bg = dk ? '#1e293b' : '#ffffff';
     const fg = dk ? '#f1f5f9' : '#111827';
