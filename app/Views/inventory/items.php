@@ -19,6 +19,8 @@
 <style>
 .swal-rounded { border-radius: 12px !important; }
 .swal2-container { z-index: 9999 !important; }
+.transparent-swal { background: transparent !important; box-shadow: none !important; }
+.transparent-swal img { border-radius: 12px; max-height: 80vh; object-fit: contain; }
 
 /* ── Responsive Card & Table Styles ── */
 .items-container {
@@ -529,7 +531,12 @@ function pageUrl($page, $search, $warehouse) {
         </div>
         <div>
           <label style="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:4px"><?= lang('App.code') ?></label>
-          <input type="text" name="code" id="code" required placeholder="<?= lang('App.example_code') ?>" style="font-size:11px;padding:8px;border-radius:8px">
+          <div style="position:relative">
+            <input type="text" name="code" id="code" required placeholder="<?= lang('App.example_code') ?>" style="font-size:11px;padding:8px;border-radius:8px;padding-right:32px;width:100%">
+            <button type="button" onclick="generateItemCode()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-faint)" title="Buat Kode Otomatis">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -672,8 +679,7 @@ function pageUrl($page, $search, $warehouse) {
       if ($isExpired)            $rowBg = 'rgba(239,68,68,.12)';
       elseif ($isSoonExp || $isLowStock) $rowBg = 'rgba(245,158,11,.12)';
     ?>
-    <div onclick="showBinCard(<?= $item['id'] ?>)" 
-         class="item-card-row<?= $isActive ? '' : ' is-inactive' ?>"
+    <div class="item-card-row<?= $isActive ? '' : ' is-inactive' ?>"
          style="background:<?= $rowBg ?>;">
 
       <!-- Checkbox -->
@@ -691,7 +697,7 @@ function pageUrl($page, $search, $warehouse) {
         <!-- Photo Thumbnail -->
         <div style="flex-shrink:0; display:flex; align-items:center;">
           <?php if (!empty($item['photo'])): ?>
-            <img src="<?= base_url('uploads/items/' . $item['photo']) ?>" alt="<?= esc($item['name']) ?>" style="width:36px; height:36px; border-radius:8px; object-fit:cover; border:1.5px solid var(--border); box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+            <img src="<?= base_url('uploads/items/' . $item['photo']) ?>" alt="<?= esc($item['name']) ?>" style="width:36px; height:36px; border-radius:8px; object-fit:cover; border:1.5px solid var(--border); box-shadow:0 1px 2px rgba(0,0,0,0.05); cursor:pointer" onclick="Swal.fire({imageUrl: this.src, imageAlt: this.alt, showConfirmButton: false, width: 'auto', padding: '1em', background: 'transparent', backdrop: 'rgba(15,23,42,0.8)', customClass: {popup: 'transparent-swal'}})">
           <?php else: ?>
             <div style="width:36px; height:36px; border-radius:8px; background:linear-gradient(135deg, var(--surface-2), var(--surface-3, var(--border))); border:1.5px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-weight:bold; font-size:10px;">
               <?= strtoupper(substr(esc($item['name']), 0, 2)) ?>
@@ -702,7 +708,7 @@ function pageUrl($page, $search, $warehouse) {
         <!-- Details Text -->
         <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
           <div class="item-title-row">
-            <span class="item-name-txt"><?= esc($item['name']) ?></span>
+            <a href="javascript:void(0)" class="item-name-txt" onclick="showBinCard(<?= $item['id'] ?>)" style="text-decoration:none; color:inherit; display:inline-block; transition:color 0.2s;" onmouseover="this.style.color='#6366f1'" onmouseout="this.style.color='inherit'" title="Lihat Kartu Stok (Bincard)"><?= esc($item['name']) ?></a>
             <div class="badges-row">
               <?php if (! $isActive): ?>
                 <span class="badge badge-rose"><?= lang('App.status_inactive') ?></span>
@@ -1035,6 +1041,15 @@ function pageUrl($page, $search, $warehouse) {
       c.style.display = 'flex';
     }
   }
+
+  /* ✨ Generate Item Code ✨ */
+  function generateItemCode() {
+    const prefix = 'ITM';
+    const timestamp = new Date().getTime().toString().substr(-6);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    document.getElementById('code').value = prefix + timestamp + random;
+  }
+
   document.getElementById('item-form-container').addEventListener('click', function(e) {
     if (e.target === this) toggleForm();
   });

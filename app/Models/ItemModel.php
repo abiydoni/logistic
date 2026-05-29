@@ -13,7 +13,7 @@ class ItemModel extends AppModel
     protected $allowedFields    = [
         'warehouse_id', 'code', 'name', 'unit',
         'initial_stock', 'current_stock', 'min_stock', 'expired_date', 'is_active', 'photo',
-        'created_at', 'updated_at', 'created_by', 'updated_by', 'deleted_by',
+        'created_at', 'updated_at', 'created_by', 'updated_by',
     ];
 
     // Dates
