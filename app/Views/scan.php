@@ -1021,7 +1021,14 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
     showAppLoader();
     try {
       const res = await fetch(URL_MUTATE, { method: 'POST', body });
-      const data = await res.json();
+      const textRaw = await res.text();
+      let data;
+      try {
+        data = JSON.parse(textRaw);
+      } catch (err) {
+        throw new Error(`Parse error. Status: ${res.status}. Body: ${textRaw.substring(0, 50)}`);
+      }
+      
       hideAppLoader();
 
       if (data.status === 'success') {
@@ -1038,11 +1045,11 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
           showConfirmButton: false,
         });
       } else {
-        swalScan({ icon: 'error', title: LANG.failed, text: (data.message || LANG.insufficient) + " | RAW: " + JSON.stringify(data), confirmButtonText: 'OK' });
+        swalScan({ icon: 'error', title: LANG.failed, text: (data.message || LANG.insufficient) + ` | DEBUG: status=${res.status}, type=${mutateType}, raw=${textRaw}`, confirmButtonText: 'OK' });
       }
     } catch (e) {
       hideAppLoader();
-      swalScan({ icon: 'error', title: 'Network error', text: String(e), confirmButtonText: 'OK' });
+      swalScan({ icon: 'error', title: 'Network/Debug Error', text: `URL: ${URL_MUTATE} | Type: ${mutateType} | Err: ${String(e)}`, confirmButtonText: 'OK' });
     }
   }
 
