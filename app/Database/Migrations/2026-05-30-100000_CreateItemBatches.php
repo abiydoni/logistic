@@ -19,7 +19,6 @@ class CreateItemBatches extends Migration
             'item_id' => [
                 'type'       => 'INT',
                 'constraint' => 11,
-                'unsigned'   => true,
             ],
             'expired_date' => [
                 'type' => 'DATE',
@@ -40,22 +39,22 @@ class CreateItemBatches extends Migration
             ],
         ]);
         $this->forge->addKey('id', true);
-        // We do not strictly enforce foreign key constraints if SQLite/MySQL has issues matching types,
-        // we can skip it for now and handle integrity in code.
-        // $this->forge->addForeignKey('item_id', 'items', 'id', 'CASCADE', 'CASCADE');
+        $this->forge->addForeignKey('item_id', 'items', 'id', 'CASCADE', 'CASCADE');
         $this->forge->createTable('item_batches', true);
 
         // 2. Add batch_id to item_transactions
-        $fields = [
-            'batch_id' => [
-                'type'       => 'INT',
-                'constraint' => 11,
-                'unsigned'   => true,
-                'null'       => true,
-                'after'      => 'item_id',
-            ],
-        ];
-        $this->forge->addColumn('item_transactions', $fields);
+        if (!$this->db->fieldExists('batch_id', 'item_transactions')) {
+            $fields = [
+                'batch_id' => [
+                    'type'       => 'INT',
+                    'constraint' => 11,
+                    'unsigned'   => true,
+                    'null'       => true,
+                    'after'      => 'item_id',
+                ],
+            ];
+            $this->forge->addColumn('item_transactions', $fields);
+        }
 
         // 3. Data Seeding: Move existing stock into batches
         $db = \Config\Database::connect();
