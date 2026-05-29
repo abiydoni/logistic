@@ -155,7 +155,7 @@
     <?php endif; ?>
   </form>
 
-  <a href="<?= base_url('profile') ?>" class="settings-link-card">
+  <a href="<?= base_url('profile') ?>" class="settings-link-card" style="margin-bottom: 20px;">
     <div class="settings-link-icon">
       <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
     </div>
@@ -166,7 +166,60 @@
     <svg class="settings-link-arrow" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
   </a>
 
+  <!-- Clear Cache Button -->
+  <button type="button" onclick="clearAppCache()" class="settings-link-card" style="width: 100%; text-align: left; background: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.3); border-radius: 12px;">
+    <div class="settings-link-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+    </div>
+    <div class="settings-link-text flex-1 min-w-0">
+      <strong style="color: #ef4444;">Bersihkan Cache Aplikasi</strong>
+      <span>Hapus cache & memori lokal jika terjadi error</span>
+    </div>
+    <svg class="settings-link-arrow" style="color: #ef4444;" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+  </button>
+
 </div>
+
+<script>
+  function clearAppCache() {
+    Swal.fire({
+      title: 'Bersihkan Cache?',
+      text: 'Ini akan menghapus cache lokal dan memori aplikasi. Halaman akan dimuat ulang. Lanjutkan?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#94a3b8',
+      confirmButtonText: 'Ya, Bersihkan',
+      cancelButtonText: 'Batal'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        localStorage.clear();
+        sessionStorage.clear();
+        if ('serviceWorker' in navigator) {
+          try {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (let r of regs) await r.unregister();
+          } catch(e) {}
+        }
+        if ('caches' in window) {
+          try {
+            const keys = await caches.keys();
+            for (let k of keys) await caches.delete(k);
+          } catch(e) {}
+        }
+        Swal.fire({
+          title: 'Berhasil!',
+          text: 'Cache telah dibersihkan.',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => {
+          window.location.reload(true);
+        });
+      }
+    });
+  }
+</script>
 
 <?php if (! empty($is_admin) && ! empty($wa_ready)): ?>
 <script>
