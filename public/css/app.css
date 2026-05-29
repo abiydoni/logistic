@@ -2946,3 +2946,60 @@ body .swal2-container.swal-scan-container {
 .scan-modal-close:active {
   transform: scale(0.94);
 }
+
+/* ═══════════════════════════════════════════════
+   DESKTOP ADAPTATION (Media Queries)
+═══════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  /* ── Shell & Layout ── */
+  .app-shell {
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: 290px 1fr;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .app-header {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+  }
+
+  .app-main {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+    overflow-y: auto;
+    padding-bottom: 24px; /* Removes padding for bottom nav */
+  }
+
+  /* ── Sidebar ── */
+  .app-sidebar {
+    position: static;
+    visibility: visible;
+    pointer-events: auto;
+    grid-column: 1 / 2;
+    grid-row: 1 / 3;
+    height: 100%;
+    z-index: 10;
+  }
+
+  .sidebar-backdrop {
+    display: none !important;
+  }
+
+  .sidebar-drawer {
+    position: static;
+    transform: none !important;
+    height: 100%;
+    width: 100%;
+    border-right: 1px solid var(--border);
+  }
+
+  /* ── Hide Mobile Elements ── */
+  .header-menu-btn,
+  .sidebar-close-btn,
+  .app-bottom-nav {
+    display: none !important;
+  }
+}

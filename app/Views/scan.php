@@ -177,6 +177,48 @@ html.dark .scan-tool-btn:hover, html.dark .scan-tool-btn.active {
 .scan-page .app-shell { min-height: unset !important; height: auto !important; }
 /* Cara lebih andal: set langsung di body saat halaman scan */
 body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !important; }
+
+/* ═══════════════════════════════════════════════
+   DESKTOP ADAPTATION (Media Queries)
+═══════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  .scan-page {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 24px;
+    padding: 3rem 2rem;
+  }
+  .scan-status-bar {
+    max-width: 900px;
+    margin-bottom: 0;
+  }
+  .scan-viewport-wrap {
+    width: 500px;
+    max-width: 100%;
+    height: 450px;
+    border-radius: 24px;
+  }
+  .scan-bottom-panel {
+    width: 380px !important;
+    max-width: 100% !important;
+    margin-top: 0 !important;
+    height: 450px;
+    display: flex;
+    flex-direction: column;
+  }
+  .scan-toolbar {
+    display: none;
+  }
+  #manual-panel {
+    display: block !important;
+  }
+  #scan-history-wrap {
+    flex: 1;
+    overflow-y: auto;
+  }
+}
 </style>
 
 <div class="scan-page" id="scan-app"
@@ -234,13 +276,13 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
     <div class="scan-manual-card hidden" id="manual-panel" style="border-bottom: 1px solid var(--border); background: var(--surface-2); padding: 12px 14px;">
       <div class="scan-section-label" style="margin-bottom: 8px;"><?= lang('App.or_manual_input') ?></div>
       <div class="scan-manual-row" style="margin-top: 0;">
-        <input type="text" id="manual-code" placeholder="<?= lang('App.manual_code_placeholder') ?>" autocomplete="off" inputmode="text" style="background: var(--surface); border: 1px solid var(--border);">
+        <input type="text" id="manual-code" placeholder="<?= lang('App.manual_code_placeholder') ?>" autocomplete="off" inputmode="text" style="background: var(--surface); border: 1px solid var(--border); width: 100%;">
         <button type="button" class="btn-primary px-4 py-3 text-xs shrink-0" id="btn-manual-submit"><?= lang('App.process') ?></button>
       </div>
     </div>
 
     <!-- History & Tip -->
-    <div style="padding: 10px 14px 12px;">
+    <div id="scan-history-wrap" style="padding: 10px 14px 12px;">
       <div class="scan-section-label" style="margin-bottom: 6px;"><?= lang('App.recent_scans') ?></div>
       <ul class="scan-history-list" id="scan-history" style="margin-bottom: 0;">
         <li class="scan-empty-history" id="history-empty" style="padding: 6px 4px; font-size: 11px; color: var(--text-faint);"><?= lang('App.empty_data') ?></li>

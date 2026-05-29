@@ -345,6 +345,46 @@
   .col-actions { gap: 2px; }
 }
 
+/* ── Desktop Layout Fixes (Detailed Table) ── */
+.desktop-only { display: none !important; }
+
+@media (min-width: 1024px) {
+  .desktop-only { display: flex !important; }
+  span.desktop-only { display: block !important; }
+  .mobile-only { display: none !important; }
+
+  /* Expanded detailed grid template for desktop */
+  .table-header-grid, .item-card-row {
+    grid-template-columns: 24px 20px 2.5fr 1fr 1.5fr 80px 100px 140px;
+    padding: 12px 16px;
+  }
+  .table-header-grid { padding: 12px 16px; }
+
+  .col-code-desktop { 
+    font-size: 12px; 
+    font-family: monospace; 
+    font-weight: 700; 
+    color: var(--text-muted); 
+    align-items: center; 
+  }
+  .col-wh-desktop { 
+    font-size: 12px; 
+    font-weight: 600; 
+    color: var(--text-muted); 
+    align-items: center; 
+  }
+  
+  .item-name-txt { font-size: 14px; }
+  .stock-badge-container { padding: 4px 8px; }
+  .stock-val-num { font-size: 13px; }
+  .stock-unit-label { font-size: 9px; }
+  
+  .btn-action-mutate, .btn-action-edit, .btn-action-qr, .btn-action-delete, .icon-btn--status {
+    width: 30px !important;
+    height: 30px !important;
+  }
+}
+
 /* Print CSS */
 @media print {
   header, 
@@ -586,6 +626,8 @@ function pageUrl($page, $search, $warehouse) {
       <div style="display:flex;align-items:center;justify-content:center"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)" style="cursor:pointer"></div>
       <span style="text-align:center">#</span>
       <span><?= lang('App.item_name') ?></span>
+      <span class="desktop-only"><?= lang('App.code') ?></span>
+      <span class="desktop-only"><?= lang('App.warehouse') ?></span>
       <span style="text-align:center">Exp</span>
       <span style="text-align:center"><?= lang('App.stock') ?></span>
       <span style="text-align:center"><?= lang('App.action') ?></span>
@@ -651,11 +693,19 @@ function pageUrl($page, $search, $warehouse) {
               <?php endif; ?>
             </div>
           </div>
-          <div class="item-sub-row">
+          <div class="item-sub-row mobile-only">
             <span class="item-code-badge"><?= esc($item['code']) ?></span>
             <span class="item-warehouse-txt"><?= esc($item['warehouse_name']) ?></span>
           </div>
         </div>
+      </div>
+
+      <!-- Desktop Columns -->
+      <div class="col-code-desktop desktop-only">
+        <span class="item-code-badge" style="font-size:11px"><?= esc($item['code']) ?></span>
+      </div>
+      <div class="col-wh-desktop desktop-only">
+        <?= esc($item['warehouse_name']) ?>
       </div>
 
       <!-- Exp -->
