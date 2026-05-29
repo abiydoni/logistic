@@ -31,7 +31,7 @@
 
 .table-header-grid {
   display: grid;
-  grid-template-columns: 24px 20px 1fr 60px 48px 100px;
+  grid-template-columns: 24px 1fr 60px 48px 100px;
   gap: 4px;
   padding: 6px 8px;
   background: var(--surface-2);
@@ -48,7 +48,7 @@
 
 .item-card-row {
   display: grid;
-  grid-template-columns: 24px 20px 1fr 60px 48px 100px;
+  grid-template-columns: 24px 1fr 60px 48px 100px;
   gap: 4px;
   padding: 8px;
   border-bottom: 1px solid var(--border);
@@ -306,14 +306,14 @@
 /* ── Mobile Layout Fixes ── */
 @media (max-width: 640px) {
   .table-header-grid {
-    grid-template-columns: 24px 18px 1fr 50px 45px;
+    grid-template-columns: 24px 1fr 50px 45px;
     padding: 8px 6px;
   }
   .action-header-mobile {
     display: none !important;
   }
   .item-card-row {
-    grid-template-columns: 24px 18px 1fr 50px 45px;
+    grid-template-columns: 24px 1fr 50px 45px;
     padding: 10px 6px 8px;
     gap: 6px 4px;
     align-items: center;
@@ -354,7 +354,7 @@
 
   /* Expanded detailed grid template for desktop */
   .table-header-grid, .item-card-row {
-    grid-template-columns: 24px 20px 2.5fr 1fr 1.5fr 80px 100px 140px;
+    grid-template-columns: 24px 2.5fr 1fr 1.5fr 80px 100px 140px;
     padding: 12px 16px;
   }
   .table-header-grid { padding: 12px 16px; }
@@ -652,7 +652,6 @@ function pageUrl($page, $search, $warehouse) {
     <!-- Header Row -->
     <div class="table-header-grid">
       <div style="display:flex;align-items:center;justify-content:center"><input type="checkbox" id="checkAll" onchange="toggleCheckAll(this)" style="cursor:pointer"></div>
-      <span style="text-align:center">#</span>
       <span><?= lang('App.item_name') ?></span>
       <span class="desktop-only"><?= lang('App.code') ?></span>
       <span class="desktop-only"><?= lang('App.warehouse') ?></span>
@@ -663,8 +662,6 @@ function pageUrl($page, $search, $warehouse) {
 
     <!-- Rows -->
     <?php
-    $offset_idx = ($current_page - 1) * $per_page;
-    $idx = 1;
     foreach ($items as $item):
       $isLowStock = $item['current_stock'] <= $item['min_stock'];
       $isExpired  = false;
@@ -686,11 +683,6 @@ function pageUrl($page, $search, $warehouse) {
       <!-- Checkbox -->
       <div style="display:flex;align-items:center;justify-content:center" onclick="event.stopPropagation()">
         <input type="checkbox" class="item-checkbox" value="<?= $item['id'] ?>" data-name="<?= esc($item['name']) ?>" data-code="<?= esc($item['code']) ?>" onchange="updateBulkActionState()" style="cursor:pointer">
-      </div>
-
-      <!-- # -->
-      <div class="col-index">
-        <?= $offset_idx + $idx ?>
       </div>
 
       <!-- Item Info -->
@@ -795,7 +787,7 @@ function pageUrl($page, $search, $warehouse) {
       </div>
 
     </div>
-    <?php $idx++; endforeach; ?>
+    <?php endforeach; ?>
 
   </div>
 

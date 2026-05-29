@@ -241,7 +241,7 @@ class Inventory extends BaseController
         $totalPages = (int)ceil($totalItems / $perPage);
         if ($currentPage > $totalPages && $totalPages > 0) $currentPage = $totalPages;
 
-        $data['items']              = $query->limit($perPage, $offset)->findAll();
+        $data['items']              = $query->orderBy('items.name', 'ASC')->limit($perPage, $offset)->findAll();
         $data['warehouses']         = $this->warehouseModel->findAll();
         $data['selected_warehouse'] = $warehouseFilter;
         $data['search_query']       = $search;
