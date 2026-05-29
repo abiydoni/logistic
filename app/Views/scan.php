@@ -1038,7 +1038,7 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
           showConfirmButton: false,
         });
       } else {
-        swalScan({ icon: 'error', title: LANG.failed, text: data.message || LANG.insufficient, confirmButtonText: 'OK' });
+        swalScan({ icon: 'error', title: LANG.failed, text: (data.message || LANG.insufficient) + " | RAW: " + JSON.stringify(data), confirmButtonText: 'OK' });
       }
     } catch (e) {
       hideAppLoader();
