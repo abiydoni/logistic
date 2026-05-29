@@ -1190,11 +1190,23 @@ function pageUrl($page, $search, $warehouse) {
         const types = document.getElementsByName('swal-type');
         let type = 'in';
         for (let t of types) if (t.checked) type = t.value;
+        
+        const qty = document.getElementById('swal-qty').value;
+        const expired = document.getElementById('swal-expired') ? document.getElementById('swal-expired').value : '';
+        
+        if (type === 'in') {
+          const requiresExp = parseInt(item.requires_expiration, 10) === 1;
+          if (requiresExp && !expired) {
+            Swal.showValidationMessage('Untuk barang di gudang ini, Tanggal Kedaluwarsa WAJIB diisi saat Mutasi Masuk!');
+            return false;
+          }
+        }
+        
         return { 
           type, 
-          quantity: document.getElementById('swal-qty').value, 
+          quantity: qty, 
           notes: document.getElementById('swal-notes').value,
-          expired_date: document.getElementById('swal-expired') ? document.getElementById('swal-expired').value : ''
+          expired_date: expired
         };
       }
     });
