@@ -89,7 +89,7 @@ class Inventory extends BaseController
                 $this->transactionModel->where('item_id', $id)->delete();
                 $this->batchModel->where('item_id', $id)->delete();
 
-                $this->itemModel->deleteWithAudit($id);
+                $this->itemModel->delete($id);
                 return $this->response->setJSON(['status' => 'success', 'message' => 'Barang berhasil dihapus beserta seluruh riwayat transaksinya!']);
             }
 
