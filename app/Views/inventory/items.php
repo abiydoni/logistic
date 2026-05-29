@@ -1147,6 +1147,10 @@ function pageUrl($page, $search, $warehouse) {
             <label style="font-size:9px;font-weight:700;text-transform:uppercase;color:#94a3b8;display:block;margin-bottom:5px;letter-spacing:0.3px"><?= lang('App.notes') ?></label>
             <input id="swal-notes" type="text" placeholder="<?= lang('App.enter_notes_placeholder') ?>" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid ${border};background:${bg2};color:${fg};font-size:12px;font-family:'Outfit',sans-serif">
           </div>
+          <div id="swal-expired-group">
+            <label style="font-size:9px;font-weight:700;text-transform:uppercase;color:#94a3b8;display:block;margin-bottom:5px;letter-spacing:0.3px">Tgl. Kedaluwarsa (Opsi)</label>
+            <input id="swal-expired" type="date" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid ${border};background:${bg2};color:${fg};font-size:12px;font-family:'Outfit',sans-serif">
+          </div>
         </div>`,
       didOpen: () => {
         const types = document.getElementsByName('swal-type');
@@ -1159,10 +1163,12 @@ function pageUrl($page, $search, $warehouse) {
                   label.style.borderColor = '#10b981';
                   label.style.background = 'rgba(16,185,129,.04)';
                   label.style.color = '#10b981';
+                  if (document.getElementById('swal-expired-group')) document.getElementById('swal-expired-group').style.display = 'block';
                 } else {
                   label.style.borderColor = '#ef4444';
                   label.style.background = 'rgba(239,68,68,.04)';
                   label.style.color = '#ef4444';
+                  if (document.getElementById('swal-expired-group')) document.getElementById('swal-expired-group').style.display = 'none';
                 }
               } else {
                 label.style.borderColor = border;
@@ -1184,7 +1190,12 @@ function pageUrl($page, $search, $warehouse) {
         const types = document.getElementsByName('swal-type');
         let type = 'in';
         for (let t of types) if (t.checked) type = t.value;
-        return { type, quantity: document.getElementById('swal-qty').value, notes: document.getElementById('swal-notes').value };
+        return { 
+          type, 
+          quantity: document.getElementById('swal-qty').value, 
+          notes: document.getElementById('swal-notes').value,
+          expired_date: document.getElementById('swal-expired') ? document.getElementById('swal-expired').value : ''
+        };
       }
     });
 
@@ -1199,6 +1210,9 @@ function pageUrl($page, $search, $warehouse) {
     body.append('type', fv.type);
     body.append('quantity', fv.quantity);
     body.append('notes', fv.notes);
+    if (fv.type === 'in' && fv.expired_date) {
+      body.append('expired_date', fv.expired_date);
+    }
 
     try {
       const res    = await fetch('<?= base_url('inventory/mutate') ?>', { method:'POST', body });

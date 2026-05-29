@@ -332,6 +332,10 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
           <input type="number" class="scan-qty-input" id="mutate-qty" value="1" min="1" max="99999" inputmode="numeric">
           <button type="button" class="scan-qty-btn" id="qty-plus" aria-label="+">+</button>
         </div>
+        <div id="scan-expired-group" style="margin: 10px 0;">
+          <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px">Tgl. Kedaluwarsa (Opsi)</label>
+          <input type="date" id="mutate-expired" class="scan-notes" style="min-height:unset;padding:10px;border-radius:12px;text-align:center" />
+        </div>
         <textarea class="scan-notes" id="mutate-notes" placeholder="<?= lang('App.enter_notes_desc') ?>"></textarea>
         <button type="button" class="btn-primary w-full py-3.5 text-sm" id="btn-apply-mutate">
           <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -812,6 +816,7 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
     });
     if (el('mutate-qty')) el('mutate-qty').value = '1';
     if (el('mutate-notes')) el('mutate-notes').value = '';
+    if (el('mutate-expired')) el('mutate-expired').value = '';
 
     el('res-name').textContent = item.name || '—';
     el('res-code').textContent = item.code || '—';
@@ -974,6 +979,7 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
     if (!currentItem) return;
     const qty = parseInt(el('mutate-qty')?.value, 10) || 0;
     const notes = el('mutate-notes')?.value?.trim() || '';
+    const expired = el('mutate-expired')?.value || '';
 
     if (qty < 1) {
       swalScan({ icon: 'warning', title: LANG.qtyZero, toast: true, position: 'top', timer: 2000, showConfirmButton: false });
@@ -1008,6 +1014,9 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
     body.append('type', mutateType);
     body.append('quantity', qty);
     body.append('notes', notes);
+    if (mutateType === 'in' && expired) {
+      body.append('expired_date', expired);
+    }
 
     showAppLoader();
     try {
@@ -1057,6 +1066,9 @@ body:has(.scan-page) .app-shell { min-height: unset !important; height: auto !im
       mutateType = btn.dataset.type;
       document.querySelectorAll('.scan-type-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      if (el('scan-expired-group')) {
+        el('scan-expired-group').style.display = mutateType === 'in' ? 'block' : 'none';
+      }
     });
   });
 

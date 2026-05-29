@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\ItemModel;
 use App\Models\ItemTransactionModel;
 use App\Models\WarehouseModel;
+use App\Models\ItemBatchModel;
 
 class Inventory extends BaseController
 {
@@ -14,12 +15,15 @@ class Inventory extends BaseController
     protected $itemModel;
     /** @var \App\Models\ItemTransactionModel */
     protected $transactionModel;
+    /** @var \App\Models\ItemBatchModel */
+    protected $batchModel;
 
     public function __construct()
     {
         $this->warehouseModel = new WarehouseModel();
         $this->itemModel = new ItemModel();
         $this->transactionModel = new ItemTransactionModel();
+        $this->batchModel = new ItemBatchModel();
     }
 
     /**
@@ -27,7 +31,7 @@ class Inventory extends BaseController
      */
     public function warehouses()
     {
-        if ($this->request->getMethod() === 'POST' || $this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $id = $this->request->getPost('id');
             $data = [
                 'name' => $this->request->getPost('name'),
@@ -56,7 +60,7 @@ class Inventory extends BaseController
      */
     public function items()
     {
-        if ($this->request->getMethod() === 'POST' || $this->request->getMethod() === 'post') {
+        if ($this->request->is('post')) {
             $id = $this->request->getPost('id');
             
             // Delete operation
@@ -149,10 +153,17 @@ class Inventory extends BaseController
                 $data['current_stock'] = $initialStock;
                 $insertedId = $this->itemModel->insert($data);
 
-                // Create initial transaction
+                // Create initial transaction and batch
                 if ($insertedId && $initialStock > 0) {
+                    $batchId = $this->batchModel->insert([
+                        'item_id' => $insertedId,
+                        'expired_date' => $expiredDate,
+                        'stock' => $initialStock
+                    ]);
+
                     $this->transactionModel->insert([
                         'item_id' => $insertedId,
+                        'batch_id' => $batchId,
                         'type' => 'in',
                         'quantity' => $initialStock,
                         'notes' => 'Stok Awal Pendaftaran Barang'
@@ -237,24 +248,63 @@ class Inventory extends BaseController
             return $this->response->setJSON(['status' => 'error', 'message' => lang('App.item_inactive')]);
         }
 
-        // Calculate new stock
+        // Calculate new stock and handle batches
         $newStock = $item['current_stock'];
         if ($type === 'in') {
             $newStock += $quantity;
+            $expiredDate = $this->request->getPost('expired_date') ?: null;
+
+            // Find existing batch with same expired_date
+            $batch = $this->batchModel->where('item_id', $itemId)
+                                      ->where('expired_date', $expiredDate)
+                                      ->first();
+            
+            if ($batch) {
+                $this->batchModel->update($batch['id'], ['stock' => $batch['stock'] + $quantity]);
+                $batchId = $batch['id'];
+            } else {
+                $batchId = $this->batchModel->insert([
+                    'item_id' => $itemId,
+                    'expired_date' => $expiredDate,
+                    'stock' => $quantity
+                ]);
+            }
+
+            $this->transactionModel->insert([
+                'item_id' => $itemId,
+                'batch_id' => $batchId,
+                'type' => 'in',
+                'quantity' => $quantity,
+                'notes' => $notes
+            ]);
         } else {
-            $newStock -= $quantity;
-            if ($newStock < 0) {
+            if ($newStock - $quantity < 0) {
                 return $this->response->setJSON(['status' => 'error', 'message' => 'Stok tidak mencukupi untuk pemakaian!']);
             }
-        }
+            $newStock -= $quantity;
+            
+            // FEFO Out Logic
+            $batches = $this->batchModel->getBatchesForFefo($itemId);
+            $qtyRemaining = $quantity;
 
-        // Save transaction
-        $this->transactionModel->insert([
-            'item_id' => $itemId,
-            'type' => $type,
-            'quantity' => $quantity,
-            'notes' => $notes
-        ]);
+            foreach ($batches as $batch) {
+                if ($qtyRemaining <= 0) break;
+
+                $take = min($qtyRemaining, $batch['stock']);
+                
+                $this->batchModel->update($batch['id'], ['stock' => $batch['stock'] - $take]);
+                
+                $this->transactionModel->insert([
+                    'item_id' => $itemId,
+                    'batch_id' => $batch['id'],
+                    'type' => 'out',
+                    'quantity' => $take,
+                    'notes' => $notes
+                ]);
+
+                $qtyRemaining -= $take;
+            }
+        }
 
         // Update item stock
         $this->itemModel->update($itemId, [

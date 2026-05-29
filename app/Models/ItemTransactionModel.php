@@ -11,7 +11,7 @@ class ItemTransactionModel extends AppModel
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     protected $allowedFields    = [
-        'item_id', 'type', 'quantity', 'notes', 
+        'item_id', 'batch_id', 'type', 'quantity', 'notes', 
         'created_at', 'updated_at', 'created_by', 'updated_by'
     ];
 
