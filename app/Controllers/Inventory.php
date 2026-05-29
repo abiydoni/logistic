@@ -233,6 +233,7 @@ class Inventory extends BaseController
      */
     public function mutate()
     {
+        log_message('error', 'MUTATE POST DATA: ' . print_r($_POST, true));
         $itemId = $this->request->getPost('item_id');
         $type = $this->request->getPost('type'); // 'in' or 'out'
         $quantity = (int)$this->request->getPost('quantity');
