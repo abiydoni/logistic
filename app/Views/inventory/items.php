@@ -162,38 +162,36 @@
 
 .col-actions {
   display: flex;
-  gap: 3px;
+  gap: 4px;
   justify-content: center;
+  flex-wrap: wrap;
 }
-.btn-action-mutate {
-  width: 26px;
-  height: 26px;
+.col-actions button svg {
+  width: 14px;
+  height: 14px;
+}
+.btn-action-mutate, .btn-action-edit, .btn-action-qr, .btn-action-delete, .icon-btn--status {
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
   border: none;
-  background: rgba(16, 185, 129, 0.08);
-  color: #10b981;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: all 0.1s ease;
+}
+.btn-action-mutate {
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
 }
 .btn-action-mutate:hover {
   background: #10b981;
   color: #ffffff;
 }
 .btn-action-edit {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: none;
   background: var(--surface-2);
   color: var(--text-muted);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.1s ease;
   border: 1px solid var(--border);
 }
 .btn-action-edit:hover {
@@ -202,34 +200,16 @@
   border-color: var(--primary);
 }
 .btn-action-qr {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: none;
   background: rgba(139, 92, 246, 0.08);
   color: #8b5cf6;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.1s ease;
 }
 .btn-action-qr:hover {
   background: #8b5cf6;
   color: #ffffff;
 }
 .btn-action-delete {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: none;
   background: rgba(239, 68, 68, 0.08);
   color: #ef4444;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.1s ease;
 }
 .btn-action-delete:hover {
   background: #ef4444;
@@ -341,11 +321,11 @@
   .stock-badge-container { min-width: 32px; padding: 1px 2px; }
   .stock-val-num { font-size: 10px; }
   .stock-unit-label { font-size: 7px; }
-  .btn-action-mutate, .btn-action-edit, .btn-action-qr, .btn-action-delete {
-    width: 22px;
-    height: 22px;
-  }
-  .col-actions { gap: 2px; }
+  .btn-action-mutate, .btn-action-edit, .btn-action-qr, .btn-action-delete, .icon-btn--status {
+      width: 28px;
+      height: 28px;
+    }
+    .col-actions { gap: 4px; }
 }
 
 /* ── Desktop Layout Fixes (Detailed Table) ── */
@@ -382,10 +362,14 @@
   .stock-val-num { font-size: 13px; }
   .stock-unit-label { font-size: 9px; }
   
-  .btn-action-mutate, .btn-action-edit, .btn-action-qr, .btn-action-delete, .icon-btn--status {
-    width: 30px !important;
-    height: 30px !important;
-  }
+    .btn-action-mutate, .btn-action-edit, .btn-action-qr, .btn-action-delete, .icon-btn--status {
+      width: 32px !important;
+      height: 32px !important;
+    }
+    .col-actions button svg {
+      width: 16px !important;
+      height: 16px !important;
+    }
 }
 
 /* Print CSS */
@@ -757,9 +741,9 @@ function pageUrl($page, $search, $warehouse) {
       <!-- Actions -->
       <div class="col-actions">
         <button onclick="event.stopPropagation(); toggleItemStatus(<?= (int) $item['id'] ?>, <?= $isActive ? 1 : 0 ?>)"
-                class="icon-btn icon-btn--status"
+                class="icon-btn icon-btn--status<?= $isActive ? ' is-active' : '' ?>"
                 title="<?= lang('App.toggle_status') ?>"
-                style="width:26px;height:26px;border-radius:6px;border:none;background:rgba(99,102,241,.1);color:var(--primary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center">
+                style="border-radius:6px;border:none;background:rgba(99,102,241,.1);color:var(--primary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center">
           <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
         </button>
         <button onclick="event.stopPropagation(); mutateStock(<?= htmlspecialchars(json_encode($item)) ?>)"
@@ -1482,10 +1466,31 @@ function pageUrl($page, $search, $warehouse) {
     const dk = document.documentElement.classList.contains('dark');
     const bg = dk ? '#1e293b' : '#ffffff';
     const fg = dk ? '#f1f5f9' : '#111827';
+    const border = dk ? '#334155' : '#e2e8f0';
+    const bg2 = dk ? '#0f172a' : '#f8fafc';
 
-    const result = await Swal.fire({
+    const role = '<?= session()->get('role') ?>';
+    
+    if (role !== 'admin') {
+      Swal.fire({
+        title: '<span style="font-size:14px;font-weight:800;color:#ef4444">Akses Ditolak</span>',
+        text: 'Hanya Admin yang dapat menghapus barang.',
+        icon: 'error',
+        background: bg,
+        color: fg,
+        confirmButtonColor: '#ef4444',
+        customClass: { popup: 'swal-rounded' }
+      });
+      return;
+    }
+
+    const { value: password, isConfirmed } = await Swal.fire({
       title: `<span style="font-size:14px;font-weight:800;color:#ef4444">Hapus Barang?</span>`,
-      html: `<p style="font-size:12px;color:${fg};margin:0">Yakin ingin menghapus <strong>${name}</strong>?<br><span style="font-size:11px;color:#ef4444">Tindakan ini tidak bisa dibatalkan.</span></p>`,
+      html: `<p style="font-size:12px;color:${fg};margin:0">Yakin ingin menghapus <strong>${name}</strong> beserta seluruh riwayatnya?<br><span style="font-size:11px;color:#ef4444">Tindakan ini tidak bisa dibatalkan.</span></p>
+             <div style="text-align:left;margin-top:16px;">
+               <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:#94a3b8;margin-bottom:6px;display:block">Masukkan Password Admin</label>
+               <input type="password" id="swal-delete-pwd" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid ${border};background:${bg2};color:${fg};font-family:'Outfit',sans-serif">
+             </div>`,
       background: bg,
       color: fg,
       icon: 'warning',
@@ -1495,13 +1500,19 @@ function pageUrl($page, $search, $warehouse) {
       confirmButtonText: 'Hapus',
       cancelButtonText: 'Batal',
       customClass: { popup: 'swal-rounded' },
+      preConfirm: () => {
+        const pwd = document.getElementById('swal-delete-pwd').value;
+        if (!pwd) Swal.showValidationMessage('Password harus diisi!');
+        return pwd;
+      }
     });
 
-    if (!result.isConfirmed) return;
+    if (!isConfirmed || !password) return;
 
     try {
       const body = new FormData();
       body.append('id', id);
+      body.append('password', password);
       body.append('_method', 'DELETE');
       const res = await fetch('<?= base_url('inventory/items') ?>', { method: 'POST', body });
       const data = await res.json();

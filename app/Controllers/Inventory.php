@@ -65,6 +65,18 @@ class Inventory extends BaseController
             
             // Delete operation
             if ($this->request->getPost('_method') === 'DELETE') {
+                if (session()->get('role') !== 'admin') {
+                    return $this->response->setJSON(['status' => 'error', 'message' => 'Hanya Admin yang dapat menghapus barang!']);
+                }
+
+                $password = $this->request->getPost('password');
+                $userModel = new \App\Models\UserModel();
+                $user = $userModel->find(session()->get('user_id'));
+
+                if (!$user || !password_verify($password, $user['password'])) {
+                    return $this->response->setJSON(['status' => 'error', 'message' => 'Password salah! Penghapusan dibatalkan.']);
+                }
+
                 $item = $this->itemModel->find($id);
                 if ($item && !empty($item['photo'])) {
                     $photoPath = FCPATH . 'uploads/items/' . $item['photo'];
@@ -72,8 +84,13 @@ class Inventory extends BaseController
                         unlink($photoPath);
                     }
                 }
+                
+                // Delete related records (transactions and batches)
+                $this->transactionModel->where('item_id', $id)->delete();
+                $this->batchModel->where('item_id', $id)->delete();
+
                 $this->itemModel->deleteWithAudit($id);
-                return $this->response->setJSON(['status' => 'success', 'message' => lang('App.update_stock_success')]);
+                return $this->response->setJSON(['status' => 'success', 'message' => 'Barang berhasil dihapus beserta seluruh riwayat transaksinya!']);
             }
 
             $warehouseId = $this->request->getPost('warehouse_id');
