@@ -65,15 +65,22 @@ class Inventory extends BaseController
             
             // Delete operation
             if ($this->request->getPost('_method') === 'DELETE') {
-                if (session()->get('role') !== 'admin') {
-                    return $this->response->setJSON(['status' => 'error', 'message' => 'Hanya Admin yang dapat menghapus barang!']);
+                $sessionRole   = session()->get('role');
+                $sessionUserId = session()->get('user_id');
+
+                if ($sessionRole !== 'admin') {
+                    return $this->response->setJSON(['status' => 'error', 'message' => 'Hanya Admin yang dapat menghapus barang! [role=' . $sessionRole . ']']);
                 }
 
                 $password = $this->request->getPost('password');
                 $userModel = new \App\Models\UserModel();
-                $user = $userModel->find(session()->get('user_id'));
+                $user = $userModel->find($sessionUserId);
 
-                if (!$user || !password_verify($password, $user['password'])) {
+                if (!$user) {
+                    return $this->response->setJSON(['status' => 'error', 'message' => 'User session tidak ditemukan. [user_id=' . $sessionUserId . ']']);
+                }
+
+                if (!password_verify($password, $user['password'])) {
                     return $this->response->setJSON(['status' => 'error', 'message' => 'Password salah! Penghapusan dibatalkan.']);
                 }
 

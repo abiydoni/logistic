@@ -1597,20 +1597,31 @@ function pageUrl($page, $search, $warehouse) {
 
     if (!isConfirmed || !password) return;
 
+    Swal.fire({ title: 'Menghapus...', allowOutsideClick: false, background: bg, color: fg, didOpen: () => Swal.showLoading() });
+
     try {
       const body = new FormData();
       body.append('id', id);
       body.append('password', password);
       body.append('_method', 'DELETE');
       const res = await fetch('<?= base_url('inventory/items') ?>', { method: 'POST', body });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch(parseErr) {
+        Swal.fire({ icon: 'error', title: 'Server Error', html: `<pre style="font-size:10px;text-align:left;white-space:pre-wrap;max-height:200px;overflow:auto">${rawText.substring(0,500)}</pre>`, confirmButtonColor: '#6366f1', background: bg, color: fg });
+        return;
+      }
       if (data.status === 'success') {
         Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Barang berhasil dihapus.', timer: 1200, showConfirmButton: false, background: bg, color: fg })
              .then(() => location.reload());
       } else {
         Swal.fire({ icon: 'error', title: 'Gagal', text: data.message, confirmButtonColor: '#6366f1', background: bg, color: fg });
       }
-    } catch(e) { console.error(e); }
+    } catch(e) {
+      Swal.fire({ icon: 'error', title: 'Network Error', text: e.message, confirmButtonColor: '#6366f1', background: bg, color: fg });
+    }
   }
 
   /* ── Bulk Actions ── */
